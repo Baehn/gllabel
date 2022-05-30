@@ -149,3 +149,5 @@ std::vector<Bezier2> GetBeziersForOutline(FT_Outline *outline)
 
 	return beziers;
 }
+
+

@@ -88,7 +88,7 @@ int main()
 	defaultFace = GLFontManager::GetFontManager()->GetDefaultFont();
 	boldFace = GLFontManager::GetFontManager()->GetFontFromPath("fonts/LiberationSans-Bold.ttf");
 
-	Label->SetText(U"Test", glm::vec4(0.5,0,0,1), defaultFace);
+	Label->SetText(U"O", glm::vec4(0.5,0,0,1), defaultFace);
 	// Label->SetText(U"Welcome to vector-based GPU text rendering!\nType whatever you want!\n\nPress LEFT/RIGHT to move cursor.\nPress ESC to toggle rotate.\nScroll vertically/horizontally to move.\nScroll while holding shift to zoom.\nRight-shift for bold.\nHold ALT to type in ", glm::vec4(0.5,0,0,1), defaultFace);
 	// Label->AppendText(U"r", glm::vec4(0.58, 0, 0.83, 1), defaultFace);
 	// Label->AppendText(U"a", glm::vec4(0.29, 0, 0.51, 1), defaultFace);
@@ -100,8 +100,8 @@ int main()
 	// Label->AppendText(U"!\n", glm::vec4(0.5,0,0,1), defaultFace);
 	Label->SetCaretPosition(Label->GetText().size());
 
-	GLLabel fpsLabel;
-	fpsLabel.SetText(toUTF32("FPS:"), glm::vec4(0,0,0,1), defaultFace);
+	// GLLabel fpsLabel;
+	// fpsLabel.SetText(toUTF32("FPS:"), glm::vec4(0,0,0,1), defaultFace);
 
 	std::cout << "Starting render\n";
 
@@ -136,7 +136,7 @@ int main()
 			fpsMat = glm::translate(fpsMat, glm::vec3(-0.1, 0, 0));
 		}
 		fpsMat = glm::scale(fpsMat, pt(7));
-		fpsLabel.Render(time, fpsMat);
+		// fpsLabel.Render(time, fpsMat);
 
 		glfwPollEvents();
 		glfwSwapBuffers(window);
@@ -152,7 +152,7 @@ int main()
 			std::ostringstream stream;
 			stream << "FPS: ";
 			stream << std::fixed << std::setprecision(1) << fps;
-			fpsLabel.SetText(toUTF32(stream.str()), glm::vec4(0,0,0,1), defaultFace);
+			// fpsLabel.SetText(toUTF32(stream.str()), glm::vec4(0,0,0,1), defaultFace);
 		}
 	}
 

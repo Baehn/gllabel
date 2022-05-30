@@ -44,7 +44,7 @@ public:
 
 public: // TODO: private
 	std::vector<AtlasGroup> atlases;
-	std::map<FT_Face, std::map<uint32_t, Glyph> > glyphs;
+	std::map<int, std::map<uint32_t, Glyph> > glyphs;
 	FT_Library ft;
 	FT_Face defaultFace;
 	GLuint glyphShader, uGridAtlas, uTransform;
@@ -64,8 +64,8 @@ public:
 	FT_Face GetFontFromName(std::string fontName);
 	FT_Face GetDefaultFont();
 
-	Glyph * GetGlyphForCodepoint(FT_Face face, uint32_t point);
-	void LoadASCII(FT_Face face);
+	Glyph * GetGlyphForCodepoint(uint32_t point);
+	// void LoadASCII(FT_Face face);
 	void UploadAtlases();
 
 	void UseGlyphShader();
