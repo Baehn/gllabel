@@ -65,8 +65,8 @@ public:
 
 	Glyph * GetGlyphForCodepoint(uint32_t point);
 	// void LoadASCII(FT_Face face);
-	void UploadAtlases();
 
+	void UploadAtlases();
 	void UseGlyphShader();
 	void SetShaderTransform(glm::mat4 transform);
 	void UseAtlasTextures(uint16_t atlasIndex);
@@ -88,6 +88,22 @@ public:
 	};
 
 private:
+
+	// Each of these arrays store the same "set" of data, but different versions
+	// of it. Consequently, each of these will be exactly the same length
+	// (except verts, which is six times longer than the other two, since
+	// six verts per glyph).
+	// Can't put them all into one array, because verts is needed alone as a
+	// buffer to upload to the GPU, and text is needed alone mostly for GetText.
+	std::u32string text;
+	std::vector<GLFontManager::Glyph *> glyphs;
+
+	bool showingCaret;
+	size_t caretPosition;
+	float prevTime, caretTime;
+
+public:
+	std::shared_ptr<GLFontManager> manager;
 	struct GlyphVertex
 	{
 		// XY coords of the vertex
@@ -102,24 +118,8 @@ private:
 		// RGBA color [0,255]
 		Color color;
 	};
-
-	// Each of these arrays store the same "set" of data, but different versions
-	// of it. Consequently, each of these will be exactly the same length
-	// (except verts, which is six times longer than the other two, since
-	// six verts per glyph).
-	// Can't put them all into one array, because verts is needed alone as a
-	// buffer to upload to the GPU, and text is needed alone mostly for GetText.
-	std::u32string text;
 	std::vector<GlyphVertex> verts;
-	std::vector<GLFontManager::Glyph *> glyphs;
-
-	std::shared_ptr<GLFontManager> manager;
-	GLuint vertBuffer, caretBuffer;
-	bool showingCaret;
-	size_t caretPosition;
-	float prevTime, caretTime;
-
-public:
+	GLuint vertBuffer;
 	GLLabel();
 	~GLLabel();
 
@@ -134,9 +134,6 @@ public:
 
 	void SetHorzAlignment(Align horzAlign);
 	void SetVertAlignment(Align vertAlign);
-	void ShowCaret(bool show) { showingCaret = show; }
-	void SetCaretPosition(int position) { caretTime = 0; caretPosition = glm::clamp(position, 0, (int)text.size()); }
-	int GetCaretPosition() { return caretPosition; }
 
 	// Render the label. Also uploads modified textures as necessary. 'time'
 	// should be passed in monotonic seconds (no specific zero time necessary).
