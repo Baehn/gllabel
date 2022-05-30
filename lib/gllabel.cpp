@@ -37,6 +37,7 @@ namespace
 	extern const char *kGlyphFragmentShader;
 }
 
+
 static const uint8_t kGridMaxSize = 20;
 static const uint16_t kGridAtlasSize = 256;	  // Fits exactly 1024 8x8 grids
 static const uint16_t kBezierAtlasSize = 256; // Fits around 700-1000 glyphs, depending on their curves
@@ -60,7 +61,7 @@ GLLabel::~GLLabel()
 	glDeleteBuffers(1, &this->caretBuffer);
 }
 
-void GLLabel::InsertText(std::u32string text, size_t index, glm::vec4 color, FT_Face face)
+void GLLabel::InsertText(std::u32string text, size_t index, glm::vec4 color)
 {
 	if (index > this->text.size())
 	{
@@ -87,24 +88,24 @@ void GLLabel::InsertText(std::u32string text, size_t index, glm::vec4 color, FT_
 
 	for (size_t i = 0; i < text.size(); i++)
 	{
-		if (text[i] == '\r')
-		{
-			this->verts[(index + i) * 6].pos = appendOffset;
-			continue;
-		}
-		else if (text[i] == '\n')
-		{
-			appendOffset.x = 0;
-			appendOffset.y -= face->height;
-			this->verts[(index + i) * 6].pos = appendOffset;
-			continue;
-		}
-		else if (text[i] == '\t')
-		{
-			appendOffset.x += 2000;
-			this->verts[(index + i) * 6].pos = appendOffset;
-			continue;
-		}
+		// if (text[i] == '\r')
+		// {
+		// 	this->verts[(index + i) * 6].pos = appendOffset;
+		// 	continue;
+		// }
+		// else if (text[i] == '\n')
+		// {
+		// 	appendOffset.x = 0;
+		// 	appendOffset.y -= face->height;
+		// 	this->verts[(index + i) * 6].pos = appendOffset;
+		// 	continue;
+		// }
+		// else if (text[i] == '\t')
+		// {
+		// 	appendOffset.x += 2000;
+		// 	this->verts[(index + i) * 6].pos = appendOffset;
+		// 	continue;
+		// }
 
 		GLFontManager::Glyph *glyph = this->manager->GetGlyphForCodepoint(text[i]);
 		if (!glyph)
@@ -320,12 +321,12 @@ void GLLabel::Render(float time, glm::mat4 transform)
 	prevTime = time;
 }
 
-GLFontManager::GLFontManager() : defaultFace(nullptr)
+GLFontManager::GLFontManager() //: defaultFace(nullptr)
 {
-	if (FT_Init_FreeType(&this->ft) != FT_Err_Ok)
-	{
-		std::cerr << "Failed to load freetype\n";
-	}
+	// if (FT_Init_FreeType(&this->ft) != FT_Err_Ok)
+	// {
+	// 	std::cerr << "Failed to load freetype\n";
+	// }
 
 	this->glyphShader = loadShaderProgram(kGlyphVertexShader, kGlyphFragmentShader);
 	this->uGridAtlas = glGetUniformLocation(glyphShader, "uGridAtlas");
@@ -340,11 +341,12 @@ GLFontManager::GLFontManager() : defaultFace(nullptr)
 	glUniformMatrix4fv(this->uTransform, 1, GL_FALSE, glm::value_ptr(iden));
 }
 
+
 GLFontManager::~GLFontManager()
 {
 	// TODO: Destroy atlases
 	glDeleteProgram(this->glyphShader);
-	FT_Done_FreeType(this->ft);
+	// FT_Done_FreeType(this->ft);
 }
 
 std::shared_ptr<GLFontManager> GLFontManager::GetFontManager()
@@ -356,29 +358,29 @@ std::shared_ptr<GLFontManager> GLFontManager::GetFontManager()
 	return GLFontManager::singleton;
 }
 
-// TODO: FT_Faces don't get destroyed... FT_Done_FreeType cleans them eventually,
-// but maybe use shared pointers?
-FT_Face GLFontManager::GetFontFromPath(std::string fontPath)
-{
-	FT_Face face;
-	return FT_New_Face(this->ft, fontPath.c_str(), 0, &face) ? nullptr : face;
-}
+// // TODO: FT_Faces don't get destroyed... FT_Done_FreeType cleans them eventually,
+// // but maybe use shared pointers?
+// FT_Face GLFontManager::GetFontFromPath(std::string fontPath)
+// {
+// 	FT_Face face;
+// 	return FT_New_Face(this->ft, fontPath.c_str(), 0, &face) ? nullptr : face;
+// }
 
-FT_Face GLFontManager::GetFontFromName(std::string fontName)
-{
-	std::string path = fontName; // TODO
-	return GLFontManager::GetFontFromPath(path);
-}
+// FT_Face GLFontManager::GetFontFromName(std::string fontName)
+// {
+// 	std::string path = fontName; // TODO
+// 	return GLFontManager::GetFontFromPath(path);
+// }
 
-FT_Face GLFontManager::GetDefaultFont()
-{
-	// TODO
-	if (!defaultFace)
-	{
-		defaultFace = GLFontManager::GetFontFromPath("fonts/LiberationSans-Regular.ttf");
-	}
-	return defaultFace;
-}
+// FT_Face GLFontManager::GetDefaultFont()
+// {
+// 	// TODO
+// 	if (!defaultFace)
+// 	{
+// 		defaultFace = GLFontManager::GetFontFromPath("fonts/LiberationSans-Regular.ttf");
+// 	}
+// 	return defaultFace;
+// }
 
 GLFontManager::AtlasGroup *GLFontManager::GetOpenAtlasGroup()
 {
@@ -739,7 +741,7 @@ GLFontManager::Glyph *GLFontManager::GetGlyphForCodepoint(uint32_t point)
 	return &this->glyphs[0][point];
 }
 
-// void GLFontManager::LoadASCII(FT_Face face)
+// void GLFontManaggger::LoadASCII(FT_Face face)
 // {
 // 	if (!face)
 // 	{

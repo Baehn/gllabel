@@ -4,9 +4,9 @@
 #include <map>
 #include <glew.h>
 #include <glm/glm.hpp>
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include FT_OUTLINE_H
+// #include <ft2build.h>
+// #include FT_FREETYPE_H
+// #include FT_OUTLINE_H
 
 class GLFontManager
 {
@@ -45,8 +45,7 @@ public:
 public: // TODO: private
 	std::vector<AtlasGroup> atlases;
 	std::map<int, std::map<uint32_t, Glyph> > glyphs;
-	FT_Library ft;
-	FT_Face defaultFace;
+	// FT_Library ft;
 	GLuint glyphShader, uGridAtlas, uTransform;
 	GLuint uGlyphData;
 
@@ -60,9 +59,9 @@ public:
 	static std::shared_ptr<GLFontManager> singleton;
 	static std::shared_ptr<GLFontManager> GetFontManager();
 
-	FT_Face GetFontFromPath(std::string fontPath);
-	FT_Face GetFontFromName(std::string fontName);
-	FT_Face GetDefaultFont();
+	// FT_Face GetFontFromPath(std::string fontPath);
+	// FT_Face GetFontFromName(std::string fontName);
+	// FT_Face GetDefaultFont();
 
 	Glyph * GetGlyphForCodepoint(uint32_t point);
 	// void LoadASCII(FT_Face face);
@@ -124,14 +123,11 @@ public:
 	GLLabel();
 	~GLLabel();
 
-	void InsertText(std::u32string text, size_t index, glm::vec4 color, FT_Face face);
+	void InsertText(std::u32string text, size_t index, glm::vec4 color);
 	void RemoveText(size_t index, size_t length);
-	inline void SetText(std::u32string text, glm::vec4 color, FT_Face face) {
+	inline void SetText(std::u32string text, glm::vec4 color) {
 		this->RemoveText(0, this->text.size());
-		this->InsertText(text, 0, color, face);
-	}
-	inline void AppendText(std::u32string text, glm::vec4 color, FT_Face face) {
-		this->InsertText(text, this->text.size(), color, face);
+		this->InsertText(text, 0, color);
 	}
 
 	inline std::u32string GetText() { return this->text; }
