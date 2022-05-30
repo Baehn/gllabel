@@ -4,21 +4,21 @@
 
 # OpenGL
 GL_INCLUDES=
-GL_LIBS=-framework OpenGL
+GL_LIBS=-lglut -lGLU -lGL
 
 # GLFW: For creating the demo window
-GLFW_INCLUDES=-I/usr/local/include/GLFW
+GLFW_INCLUDES=-I/usr/include/GLFW
 GLFW_LIBS=-lglfw
 
 # GLEW: OpenGL extension loader
-GLEW_INCLUDES=-I/usr/local/include/GL
+GLEW_INCLUDES=-I/usr/include/GL
 GLEW_LIBS=-lGLEW
 
 # GLM: Matrix math
-GLM_INCLUDES=-I/usr/local/include
+GLM_INCLUDES=-I/usr/include
 
 # FreeType2: For reading TrueType font files
-FT2_INCLUDES=-I/usr/local/include/freetype2
+FT2_INCLUDES=-I/usr/include/freetype2
 FT2_LIBS=-lfreetype
 
 
@@ -29,4 +29,4 @@ LDLIBS=${GL_LIBS} ${GLFW_LIBS} ${GLEW_LIBS} ${FT2_LIBS}
 run: demo
 	./demo
 
-demo: demo.cpp lib/gllabel.cpp lib/types.cpp lib/vgrid.cpp lib/cubic2quad.cpp lib/outline.cpp
+demo: demo.cpp lib/gllabel.cpp lib/types.cpp lib/util.cpp lib/vgrid.cpp lib/cubic2quad.cpp lib/outline.cpp

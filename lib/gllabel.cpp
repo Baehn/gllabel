@@ -19,10 +19,12 @@
 #include <gllabel.hpp>
 #include "vgrid.hpp"
 #include "outline.hpp"
+#include "util.hpp"
 #include <set>
-#include <fstream>
+// #include <fstream>
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
+
 
 #define sq(x) ((x)*(x))
 
@@ -130,24 +132,24 @@ void GLLabel::InsertText(std::u32string text, size_t index, glm::vec4 color, FT_
 		this->glyphs[index + i] = glyph;
 	}
 
-	// Shift everything after, if necessary
-	glm::vec2 deltaAppend = appendOffset - initialAppendOffset;
-	for (size_t i = index+text.size(); i < this->text.size(); i++) {
-		// If a newline is reached and no change in the y has happened, all
-		// glyphs which need to be moved have been moved.
-		if (this->text[i] == '\n') {
-			if (deltaAppend.y == 0) {
-				break;
-			}
-			if (deltaAppend.x < 0) {
-				deltaAppend.x = 0;
-			}
-		}
+	// // Shift everything after, if necessary
+	// glm::vec2 deltaAppend = appendOffset - initialAppendOffset;
+	// for (size_t i = index+text.size(); i < this->text.size(); i++) {
+	// 	// If a newline is reached and no change in the y has happened, all
+	// 	// glyphs which need to be moved have been moved.
+	// 	if (this->text[i] == '\n') {
+	// 		if (deltaAppend.y == 0) {
+	// 			break;
+	// 		}
+	// 		if (deltaAppend.x < 0) {
+	// 			deltaAppend.x = 0;
+	// 		}
+	// 	}
 
-		for (unsigned int j = 0; j < 6; j++) {
-			this->verts[i*6 + j].pos += deltaAppend;
-		}
-	}
+	// 	for (unsigned int j = 0; j < 6; j++) {
+	// 		this->verts[i*6 + j].pos += deltaAppend;
+	// 	}
+	// }
 
 	glBindBuffer(GL_ARRAY_BUFFER, this->vertBuffer);
 
@@ -241,52 +243,52 @@ void GLLabel::Render(float time, glm::mat4 transform)
 
 	glDrawArrays(GL_TRIANGLES, 0, this->verts.size());
 
-	if (this->showingCaret && !(((int)(this->caretTime*3/2)) % 2)) {
-		GLFontManager::Glyph *pipe = this->manager->GetGlyphForCodepoint(this->manager->GetDefaultFont(), '|');
+	// if (this->showingCaret && !(((int)(this->caretTime*3/2)) % 2)) {
+	// 	GLFontManager::Glyph *pipe = this->manager->GetGlyphForCodepoint(this->manager->GetDefaultFont(), '|');
 
-		size_t index = this->caretPosition;
+	// 	size_t index = this->caretPosition;
 
-		glm::vec2 offset(0, 0);
-		if (index > 0) {
-			offset = this->verts[(index-1)*6].pos;
-			if (this->glyphs[index-1]) {
-				offset += -glm::vec2(this->glyphs[index-1]->offset[0], this->glyphs[index-1]->offset[1]) + glm::vec2(this->glyphs[index-1]->advance, 0);
-			}
-		}
+	// 	glm::vec2 offset(0, 0);
+	// 	if (index > 0) {
+	// 		offset = this->verts[(index-1)*6].pos;
+	// 		if (this->glyphs[index-1]) {
+	// 			offset += -glm::vec2(this->glyphs[index-1]->offset[0], this->glyphs[index-1]->offset[1]) + glm::vec2(this->glyphs[index-1]->advance, 0);
+	// 		}
+	// 	}
 
-		GlyphVertex x[6]{};
-		x[0].pos = glm::vec2(0, 0);
-		x[1].pos = glm::vec2(pipe->size[0], 0);
-		x[2].pos = glm::vec2(0, pipe->size[1]);
-		x[3].pos = glm::vec2(pipe->size[0], pipe->size[1]);
-		x[4].pos = glm::vec2(0, pipe->size[1]);
-		x[5].pos = glm::vec2(pipe->size[0], 0);
-		for (unsigned int j = 0; j < 6; j++) {
-			x[j].pos += offset;
-			x[j].pos[0] += pipe->offset[0];
-			x[j].pos[1] += pipe->offset[1];
+	// 	GlyphVertex x[6]{};
+	// 	x[0].pos = glm::vec2(0, 0);
+	// 	x[1].pos = glm::vec2(pipe->size[0], 0);
+	// 	x[2].pos = glm::vec2(0, pipe->size[1]);
+	// 	x[3].pos = glm::vec2(pipe->size[0], pipe->size[1]);
+	// 	x[4].pos = glm::vec2(0, pipe->size[1]);
+	// 	x[5].pos = glm::vec2(pipe->size[0], 0);
+	// 	for (unsigned int j = 0; j < 6; j++) {
+	// 		x[j].pos += offset;
+	// 		x[j].pos[0] += pipe->offset[0];
+	// 		x[j].pos[1] += pipe->offset[1];
 
-			x[j].color = {0,0,255,100};
+	// 		x[j].color = {0,0,255,100};
 
-			// Encode both the bezier position and the norm coord into one int
-			// This theoretically could overflow, but the atlas position will
-			// never be over half the size of a uint16, so it's fine.
-			unsigned int k = (j < 4) ? j : 6 - j;
-			unsigned int normX = k & 1;
-			unsigned int normY = k > 1;
-			unsigned int norm = (normX << 1) + normY;
-			x[j].data = (pipe->bezierAtlasPos[0] << 2) + norm;
-			// this->verts[(index + i)*6 + j] = v[j];
-		}
+	// 		// Encode both the bezier position and the norm coord into one int
+	// 		// This theoretically could overflow, but the atlas position will
+	// 		// never be over half the size of a uint16, so it's fine.
+	// 		unsigned int k = (j < 4) ? j : 6 - j;
+	// 		unsigned int normX = k & 1;
+	// 		unsigned int normY = k > 1;
+	// 		unsigned int norm = (normX << 1) + normY;
+	// 		x[j].data = (pipe->bezierAtlasPos[0] << 2) + norm;
+	// 		// this->verts[(index + i)*6 + j] = v[j];
+	// 	}
 
-		glBindBuffer(GL_ARRAY_BUFFER, this->caretBuffer);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GLLabel::GlyphVertex), (void*)offsetof(GLLabel::GlyphVertex, pos));
-		glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(GLLabel::GlyphVertex), (void*)offsetof(GLLabel::GlyphVertex, data));
-		glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(GLLabel::GlyphVertex), (void*)offsetof(GLLabel::GlyphVertex, color));
+	// 	glBindBuffer(GL_ARRAY_BUFFER, this->caretBuffer);
+	// 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GLLabel::GlyphVertex), (void*)offsetof(GLLabel::GlyphVertex, pos));
+	// 	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(GLLabel::GlyphVertex), (void*)offsetof(GLLabel::GlyphVertex, data));
+	// 	glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(GLLabel::GlyphVertex), (void*)offsetof(GLLabel::GlyphVertex, color));
 
-		glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(GlyphVertex), &x[0], GL_STREAM_DRAW);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-	}
+	// 	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(GlyphVertex), &x[0], GL_STREAM_DRAW);
+	// 	glDrawArrays(GL_TRIANGLES, 0, 6);
+	// }
 
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
@@ -406,69 +408,35 @@ struct bitmapdata
 };
 #pragma pack(pop)
 
-void writeBMP(const char *path, uint32_t width, uint32_t height, uint16_t channels, uint8_t *data)
-{
-	FILE *f = fopen(path, "wb");
+// void writeBMP(const char *path, uint32_t width, uint32_t height, uint16_t channels, uint8_t *data)
+// {
+// 	FILE *f = fopen(path, "wb");
 
-	bitmapdata head;
-	head.magic[0] = 'B';
-	head.magic[1] = 'M';
-	head.size = sizeof(bitmapdata) + width*height*channels;
-	head.res1 = 0;
-	head.res2 = 0;
-	head.offset = sizeof(bitmapdata);
-	head.biSize = 40;
-	head.width = width;
-	head.height = height;
-	head.planes = 1;
-	head.bitCount = 8*channels;
-	head.compression = 0;
-	head.imageSizeBytes = width*height*channels;
-	head.xpelsPerMeter = 0;
-	head.ypelsPerMeter = 0;
-	head.clrUsed = 0;
-	head.clrImportant = 0;
+// 	bitmapdata head;
+// 	head.magic[0] = 'B';
+// 	head.magic[1] = 'M';
+// 	head.size = sizeof(bitmapdata) + width*height*channels;
+// 	head.res1 = 0;
+// 	head.res2 = 0;
+// 	head.offset = sizeof(bitmapdata);
+// 	head.biSize = 40;
+// 	head.width = width;
+// 	head.height = height;
+// 	head.planes = 1;
+// 	head.bitCount = 8*channels;
+// 	head.compression = 0;
+// 	head.imageSizeBytes = width*height*channels;
+// 	head.xpelsPerMeter = 0;
+// 	head.ypelsPerMeter = 0;
+// 	head.clrUsed = 0;
+// 	head.clrImportant = 0;
 
-	fwrite(&head, sizeof(head), 1, f);
-	fwrite(data, head.imageSizeBytes, 1, f);
-	fclose(f);
-}
+// 	fwrite(&head, sizeof(head), 1, f);
+// 	fwrite(data, head.imageSizeBytes, 1, f);
+// 	fclose(f);
+// }
 
-// A bezier is written as 6 16-bit integers (12 bytes). Increments buffer by
-// the number of bytes written (always 12). Coords are scaled from
-// [0,glyphSize] to [0,UINT16_MAX].
-void write_bezier_to_buffer(uint16_t **pbuffer, Bezier2 *bezier, Vec2 *glyphSize)
-{
-	uint16_t *buffer = *pbuffer;
-	buffer[0] = bezier->e0.x * UINT16_MAX / glyphSize->w;
-	buffer[1] = bezier->e0.y * UINT16_MAX / glyphSize->h;
-	buffer[2] = bezier->c.x  * UINT16_MAX / glyphSize->w;
-	buffer[3] = bezier->c.y  * UINT16_MAX / glyphSize->h;
-	buffer[4] = bezier->e1.x * UINT16_MAX / glyphSize->w;
-	buffer[5] = bezier->e1.y * UINT16_MAX / glyphSize->h;
-	*pbuffer += 6;
-}
 
-void write_glyph_data_to_buffer(
-	uint8_t *buffer8,
-	std::vector<Bezier2> &beziers,
-	Vec2 &glyphSize,
-	uint16_t gridX,
-	uint16_t gridY,
-	uint16_t gridWidth,
-	uint16_t gridHeight)
-{
-	uint16_t *buffer = (uint16_t *)buffer8;
-	buffer[0] = gridX;
-	buffer[1] = gridY;
-	buffer[2] = gridWidth;
-	buffer[3] = gridHeight;
-	buffer += 4;
-
-	for (size_t i = 0; i < beziers.size(); i++) {
-		write_bezier_to_buffer(&buffer, &beziers[i], &glyphSize);
-	}
-}
 
 GLFontManager::Glyph * GLFontManager::GetGlyphForCodepoint(FT_Face face, uint32_t point)
 {
@@ -574,8 +542,8 @@ GLFontManager::Glyph * GLFontManager::GetGlyphForCodepoint(FT_Face face, uint32_
 	atlas->nextGridPos[0] += kGridMaxSize;
 	atlas->uploaded = false;
 
-	writeBMP("bezierAtlas.bmp", kBezierAtlasSize, kBezierAtlasSize, 4, atlas->glyphDataBuf);
-	writeBMP("gridAtlas.bmp", kGridAtlasSize, kGridAtlasSize, 4, atlas->gridAtlas);
+	// writeBMP("bezierAtlas.bmp", kBezierAtlasSize, kBezierAtlasSize, 4, atlas->glyphDataBuf);
+	// writeBMP("gridAtlas.bmp", kGridAtlasSize, kGridAtlasSize, 4, atlas->gridAtlas);
 
 	return &this->glyphs[face][point];
 }

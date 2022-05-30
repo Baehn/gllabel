@@ -1,7 +1,9 @@
 #include "vgrid.hpp"
-#include <iostream>
+// #include <iostream>
 #include <cmath>
 #include <assert.h>
+#include <stdexcept>
+
 
 // Converts X,Y to index in a row-major 2D array
 constexpr size_t xy2i(const size_t x, const size_t y, const size_t w) {
@@ -228,11 +230,13 @@ void VGridAtlas::WriteVGridAt(VGrid &grid, uint16_t atX, uint16_t atY)
 
 			std::set<size_t> *beziers = &grid.cellBeziers[cellIdx];
 			if (beziers->size() > this->depth) {
-				std::cerr << "WARN: Too many beziers in one grid cell ("
-					<< "max: " << this->depth
-					<< ", need: " << beziers->size()
-					<< ", x: " << x
-					<< ", y: " << y << ")\n";
+				// std::cerr << "WARN: Too many beziers in one grid cell ("
+				// 	<< "max: " << this->depth
+				// 	<< ", need: " << beziers->size()
+				// 	<< ", x: " << x
+				// 	<< ", y: " << y << ")\n";
+		        throw std::runtime_error("WARN: Too many beziers in one grid cell");
+
 			}
 
 			uint8_t *data = &this->data[atlasIdx];

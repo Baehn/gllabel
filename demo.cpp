@@ -88,15 +88,16 @@ int main()
 	defaultFace = GLFontManager::GetFontManager()->GetDefaultFont();
 	boldFace = GLFontManager::GetFontManager()->GetFontFromPath("fonts/LiberationSans-Bold.ttf");
 
-	Label->SetText(U"Welcome to vector-based GPU text rendering!\nType whatever you want!\n\nPress LEFT/RIGHT to move cursor.\nPress ESC to toggle rotate.\nScroll vertically/horizontally to move.\nScroll while holding shift to zoom.\nRight-shift for bold.\nHold ALT to type in ", glm::vec4(0.5,0,0,1), defaultFace);
-	Label->AppendText(U"r", glm::vec4(0.58, 0, 0.83, 1), defaultFace);
-	Label->AppendText(U"a", glm::vec4(0.29, 0, 0.51, 1), defaultFace);
-	Label->AppendText(U"i", glm::vec4(0,    0, 1,    1), defaultFace);
-	Label->AppendText(U"n", glm::vec4(0,    1, 0,    1), defaultFace);
-	Label->AppendText(U"b", glm::vec4(1,    1, 0,    1), defaultFace);
-	Label->AppendText(U"o", glm::vec4(1,    0.5, 0,  1), defaultFace);
-	Label->AppendText(U"w", glm::vec4(1,    0, 0,    1), defaultFace);
-	Label->AppendText(U"!\n", glm::vec4(0.5,0,0,1), defaultFace);
+	Label->SetText(U"Test", glm::vec4(0.5,0,0,1), defaultFace);
+	// Label->SetText(U"Welcome to vector-based GPU text rendering!\nType whatever you want!\n\nPress LEFT/RIGHT to move cursor.\nPress ESC to toggle rotate.\nScroll vertically/horizontally to move.\nScroll while holding shift to zoom.\nRight-shift for bold.\nHold ALT to type in ", glm::vec4(0.5,0,0,1), defaultFace);
+	// Label->AppendText(U"r", glm::vec4(0.58, 0, 0.83, 1), defaultFace);
+	// Label->AppendText(U"a", glm::vec4(0.29, 0, 0.51, 1), defaultFace);
+	// Label->AppendText(U"i", glm::vec4(0,    0, 1,    1), defaultFace);
+	// Label->AppendText(U"n", glm::vec4(0,    1, 0,    1), defaultFace);
+	// Label->AppendText(U"b", glm::vec4(1,    1, 0,    1), defaultFace);
+	// Label->AppendText(U"o", glm::vec4(1,    0.5, 0,  1), defaultFace);
+	// Label->AppendText(U"w", glm::vec4(1,    0, 0,    1), defaultFace);
+	// Label->AppendText(U"!\n", glm::vec4(0.5,0,0,1), defaultFace);
 	Label->SetCaretPosition(Label->GetText().size());
 
 	GLLabel fpsLabel;
