@@ -20,19 +20,13 @@
 #include "vgrid.hpp"
 #include "util.hpp"
 #include <set>
-// #include <fstream>
 #include <iostream>
-#include <glm/gtc/type_ptr.hpp>
+#include "data.hpp"
 
 #define sq(x) ((x) * (x))
 
 std::shared_ptr<GLFontManager> GLFontManager::singleton = nullptr;
 
-namespace
-{
-	extern const char *kGlyphVertexShader;
-	extern const char *kGlyphFragmentShader;
-}
 
 static const uint8_t kGridMaxSize = 20;
 static const uint16_t kGridAtlasSize = 256;	  // Fits exactly 1024 8x8 grids
@@ -125,95 +119,6 @@ void GLLabel::InsertText(std::u32string text, size_t index, glm::vec4 color)
 	// caretTime = 0;
 }
 
-void GLLabel::RemoveText(size_t index, size_t length)
-{
-	if (index >= this->text.size())
-	{
-		return;
-	}
-	if (index + length > this->text.size())
-	{
-		length = this->text.size() - index;
-	}
-
-	glm::vec2 startOffset(0, 0);
-	if (index > 0)
-	{
-		startOffset = this->verts[(index - 1) * 6].pos;
-		if (this->glyphs[index - 1])
-		{
-			startOffset += -glm::vec2(this->glyphs[index - 1]->offset[0], this->glyphs[index - 1]->offset[1]) + glm::vec2(this->glyphs[index - 1]->advance, 0);
-		}
-	}
-
-	// Since all the glyphs between index-1 and index+length have been erased,
-	// the end offset will be at index until it gets shifted back
-	glm::vec2 endOffset(0, 0);
-	// if (this->glyphs[index+length-1])
-	// {
-	endOffset = this->verts[index * 6].pos;
-	if (this->glyphs[index + length - 1])
-	{
-		endOffset += -glm::vec2(this->glyphs[index + length - 1]->offset[0], this->glyphs[index + length - 1]->offset[1]) + glm::vec2(this->glyphs[index + length - 1]->advance, 0);
-	}
-	// }
-
-	this->text.erase(index, length);
-	this->glyphs.erase(this->glyphs.begin() + index, this->glyphs.begin() + (index + length));
-	this->verts.erase(this->verts.begin() + index * 6, this->verts.begin() + (index + length) * 6);
-
-	glm::vec2 deltaOffset = endOffset - startOffset;
-	// Shift everything after, if necessary
-	for (size_t i = index; i < this->text.size(); i++)
-	{
-		if (this->text[i] == '\n')
-		{
-			deltaOffset.x = 0;
-		}
-
-		for (unsigned int j = 0; j < 6; j++)
-		{
-			this->verts[i * 6 + j].pos -= deltaOffset;
-		}
-	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, this->vertBuffer);
-	if (this->verts.size() > 0)
-	{
-		glBufferSubData(GL_ARRAY_BUFFER,
-						index * 6 * sizeof(GlyphVertex),
-						(this->verts.size() - index * 6) * sizeof(GlyphVertex),
-						&this->verts[index * 6]);
-	}
-
-	caretTime = 0;
-}
-
-void GLLabel::Render(float time, glm::mat4 transform)
-{
-	// float deltaTime = time - prevTime;
-	// this->caretTime += deltaTime;
-
-	// this->manager->UploadAtlases();
-	// this->manager->UseAtlasTextures(0); // TODO: Textures based on each glyph
-
-	// glEnable(GL_BLEND);
-	// glBindBuffer(GL_ARRAY_BUFFER, this->vertBuffer);
-	// glEnableVertexAttribArray(0);
-	// glEnableVertexAttribArray(1);
-	// glEnableVertexAttribArray(2);
-	// glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GLLabel::GlyphVertex), (void *)offsetof(GLLabel::GlyphVertex, pos));
-	// glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(GLLabel::GlyphVertex), (void *)offsetof(GLLabel::GlyphVertex, data));
-	// glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(GLLabel::GlyphVertex), (void *)offsetof(GLLabel::GlyphVertex, color));
-
-	// glDrawArrays(GL_TRIANGLES, 0, this->verts.size());
-
-	// glDisableVertexAttribArray(0);
-	// glDisableVertexAttribArray(1);
-	// glDisableVertexAttribArray(2);
-	// glDisable(GL_BLEND);
-}
-
 GLFontManager::GLFontManager() //: defaultFace(nullptr)
 {
 }
@@ -221,7 +126,7 @@ GLFontManager::GLFontManager() //: defaultFace(nullptr)
 GLFontManager::~GLFontManager()
 {
 	// TODO: Destroy atlases
-	glDeleteProgram(this->glyphShader);
+	// glDeleteProgram(this->glyphShader);
 	// FT_Done_FreeType(this->ft);
 }
 
@@ -242,22 +147,6 @@ GLFontManager::AtlasGroup *GLFontManager::GetOpenAtlasGroup()
 		group.glyphDataBuf = new uint8_t[sq(kBezierAtlasSize) * kAtlasChannels]();
 		group.gridAtlas = new uint8_t[sq(kGridAtlasSize) * kAtlasChannels]();
 		group.uploaded = true;
-
-		// https://www.khronos.org/opengl/wiki/Buffer_Texture
-		// TODO: Check GL_MAX_TEXTURE_BUFFER_SIZE
-		glGenBuffers(1, &group.glyphDataBufId);
-		glBindBuffer(GL_TEXTURE_BUFFER, group.glyphDataBufId);
-		glGenTextures(1, &group.glyphDataBufTexId);
-		glBindTexture(GL_TEXTURE_BUFFER, group.glyphDataBufTexId);
-		glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA8, group.glyphDataBufId);
-
-		glGenTextures(1, &group.gridAtlasId);
-		glBindTexture(GL_TEXTURE_2D, group.gridAtlasId);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, kGridAtlasSize, kGridAtlasSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, group.gridAtlas);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 		this->atlases.push_back(group);
 	}
@@ -302,29 +191,9 @@ GLFontManager::Glyph *GLFontManager::GetGlyphForCodepoint(uint32_t point)
 
 	AtlasGroup *atlas = this->GetOpenAtlasGroup();
 
-	// Load the glyph. FT_LOAD_NO_SCALE implies that FreeType should not
-	// render the glyph to a bitmap, and ensures that metrics and outline
-	// points are represented in font units instead of em.
-	// FT_UInt glyphIndex = FT_Get_Char_Index(face, point);
-	// if (FT_Load_Glyph(face, glyphIndex, FT_LOAD_NO_SCALE))
-	// {
-	// 	return nullptr;
-	// }
-
-	// FT_Pos glyphWidth = face->glyph->metrics.width;
-	// FT_Pos glyphHeight = face->glyph->metrics.height;
 	int glyphWidth = 1398;
 	int glyphHeight = 1450;
 
-	// std::cout << "glyphWidth:" << glyphWidth << std::endl;
-	// std::cout << "glyphHeight:" << glyphHeight << std::endl;
-	// std::cout << "horiBearingX:" << face->glyph->metrics.horiBearingX << std::endl;
-	// std::cout << "horiBearingY:" << face->glyph->metrics.horiBearingY << std::endl;
-	// std::cout << "horiAdvance :" << face->glyph->metrics.horiAdvance << std::endl;
-
-	// int16_t horiBearingX = face->glyph->metrics.horiBearingX;
-	// int16_t horiBearingY = face->glyph->metrics.horiBearingY;
-	// int16_t horiAdvance = face->glyph->metrics.horiAdvance;
 	int16_t horiBearingX = 97;
 	int16_t horiBearingY = 1430;
 	int16_t horiAdvance = 1593;
@@ -332,150 +201,9 @@ GLFontManager::Glyph *GLFontManager::GetGlyphForCodepoint(uint32_t point)
 	uint8_t gridWidth = kGridMaxSize;
 	uint8_t gridHeight = kGridMaxSize;
 
-	// std::vector<Bezier2> curves2 = GetBeziersForOutline(&face->glyph->outline);
-	// for(int i = 0; i<curves2.size(); i++){
-	// std::cout  << " " << curves2[i].e0.x;
-	// std::cout  << " " << curves2[i].e0.y;
-	// std::cout  << " " << curves2[i].e1.x;
-	// std::cout  << " " << curves2[i].e1.y;
-	// std::cout  << " " << curves2[i].c.x;
-	// std::cout  << " " << curves2[i].c.y;
-	// }
-	// std::cout << std::endl;
-
-	// int dat[
-	// 	1398 731 1313 344 1398 510 1313 344 1071 89 1229 178 1071 89 698 0 913 0 698 0 323 88 481 0 323 88 83 342 166 176 83 342 0 731 0 509 0 731 185 1259 0 1069 185 1259 700 1450 370 1450 700 1450 1073 1364 915 1450 1073 1364 1314 1116 1231 1279 1314 1116 1398 731 1398 953 1203 731 1071 1144 1203 994 1071 1144 700 1294 940 1294 700 1294 326 1146 458 1294 326 1146 194 731 194 998 194 731 327 310 194 466 327 310 698 155 461 155 698 155 1072 305 942 155 1072 305 1203 731 1203 456
-	// // std::cout << "bezier1 :" << curves[0].e1 << std::endl;
-	// // std::cout << "bezier1 :" << curves[0].c << std::endl;
 
 	std::vector<Bezier2> curves(19);
-	// curves.reserve(18);
-
-	curves[0].e0.x = 1398;
-	curves[0].e0.y = 731;
-	curves[0].e1.x = 1313;
-	curves[0].e1.y = 344;
-	curves[0].c.x = 1398;
-	curves[0].c.y = 510;
-	curves[1].e0.x = 1313;
-	curves[1].e0.y = 344;
-	curves[1].e1.x = 1071;
-	curves[1].e1.y = 89;
-	curves[1].c.x = 1229;
-	curves[1].c.y = 178;
-	curves[2].e0.x = 1071;
-	curves[2].e0.y = 89;
-	curves[2].e1.x = 698;
-	curves[2].e1.y = 0;
-	curves[2].c.x = 913;
-	curves[2].c.y = 0;
-	curves[3].e0.x = 698;
-	curves[3].e0.y = 0;
-	curves[3].e1.x = 323;
-	curves[3].e1.y = 88;
-	curves[3].c.x = 481;
-	curves[3].c.y = 0;
-	curves[4].e0.x = 323;
-	curves[4].e0.y = 88;
-	curves[4].e1.x = 83;
-	curves[4].e1.y = 342;
-	curves[4].c.x = 166;
-	curves[4].c.y = 176;
-	curves[5].e0.x = 83;
-	curves[5].e0.y = 342;
-	curves[5].e1.x = 0;
-	curves[5].e1.y = 731;
-	curves[5].c.x = 0;
-	curves[5].c.y = 509;
-	curves[6].e0.x = 0;
-	curves[6].e0.y = 731;
-	curves[6].e1.x = 185;
-	curves[6].e1.y = 1259;
-	curves[6].c.x = 0;
-	curves[6].c.y = 1069;
-	curves[7].e0.x = 185;
-	curves[7].e0.y = 1259;
-	curves[7].e1.x = 700;
-	curves[7].e1.y = 1450;
-	curves[7].c.x = 370;
-	curves[7].c.y = 1450;
-	curves[8].e0.x = 700;
-	curves[8].e0.y = 1450;
-	curves[8].e1.x = 1073;
-	curves[8].e1.y = 1364;
-	curves[8].c.x = 915;
-	curves[8].c.y = 1450;
-	curves[9].e0.x = 1073;
-	curves[9].e0.y = 1364;
-	curves[9].e1.x = 1314;
-	curves[9].e1.y = 1116;
-	curves[9].c.x = 1231;
-	curves[9].c.y = 1279;
-	curves[10].e0.x = 1314;
-	curves[10].e0.y = 1116;
-	curves[10].e1.x = 1398;
-	curves[10].e1.y = 731;
-	curves[10].c.x = 1398;
-	curves[10].c.y = 953;
-	curves[11].e0.x = 1203;
-	curves[11].e0.y = 731;
-	curves[11].e1.x = 1071;
-	curves[11].e1.y = 1144;
-	curves[11].c.x = 1203;
-	curves[11].c.y = 994;
-	curves[12].e0.x = 1071;
-	curves[12].e0.y = 1144;
-	curves[12].e1.x = 700;
-	curves[12].e1.y = 1294;
-	curves[12].c.x = 940;
-	curves[12].c.y = 1294;
-	curves[13].e0.x = 700;
-	curves[13].e0.y = 1294;
-	curves[13].e1.x = 326;
-	curves[13].e1.y = 1146;
-	curves[13].c.x = 458;
-	curves[13].c.y = 1294;
-	curves[14].e0.x = 326;
-	curves[14].e0.y = 1146;
-	curves[14].e1.x = 194;
-	curves[14].e1.y = 731;
-	curves[14].c.x = 194;
-	curves[14].c.y = 998;
-	curves[15].e0.x = 194;
-	curves[15].e0.y = 731;
-	curves[15].e1.x = 327;
-	curves[15].e1.y = 310;
-	curves[15].c.x = 194;
-	curves[15].c.y = 466;
-	curves[16].e0.x = 327;
-	curves[16].e0.y = 310;
-	curves[16].e1.x = 698;
-	curves[16].e1.y = 155;
-	curves[16].c.x = 461;
-	curves[16].c.y = 155;
-	curves[17].e0.x = 698;
-	curves[17].e0.y = 155;
-	curves[17].e1.x = 1072;
-	curves[17].e1.y = 305;
-	curves[17].c.x = 942;
-	curves[17].c.y = 155;
-	curves[18].e0.x = 1072;
-	curves[18].e0.y = 305;
-	curves[18].e1.x = 1203;
-	curves[18].e1.y = 731;
-	curves[18].c.x = 1203;
-	curves[18].c.y = 456;
-
-	for (int i = 0; i < curves.size(); i++)
-	{
-		std::cout << " " << curves[i].e0.x;
-		std::cout << " " << curves[i].e0.y;
-		std::cout << " " << curves[i].e1.x;
-		std::cout << " " << curves[i].e1.y;
-		std::cout << " " << curves[i].c.x;
-		std::cout << " " << curves[i].c.y;
-	}
-	std::cout << std::endl;
+	write_test_curves(curves);
 
 	VGrid grid(curves, Vec2(glyphWidth, glyphHeight), gridWidth, gridHeight);
 
@@ -539,12 +267,7 @@ GLFontManager::Glyph *GLFontManager::GetGlyphForCodepoint(uint32_t point)
 		kGridMaxSize);
 
 	// TODO: Integrate with AtlasGroup / replace AtlasGroup
-	VGridAtlas gridAtlas{};
-	gridAtlas.data = atlas->gridAtlas;
-	gridAtlas.width = kGridAtlasSize;
-	gridAtlas.height = kGridAtlasSize;
-	gridAtlas.depth = kAtlasChannels;
-	gridAtlas.WriteVGridAt(grid, atlas->nextGridPos[0], atlas->nextGridPos[1]);
+	WriteVGridAt(grid, atlas->nextGridPos[0], atlas->nextGridPos[1], atlas->gridAtlas, kGridAtlasSize, kGridAtlasSize, kAtlasChannels);
 
 	GLFontManager::Glyph glyph{};
 	glyph.bezierAtlasPos[0] = atlas->glyphDataBufOffset;
@@ -563,35 +286,4 @@ GLFontManager::Glyph *GLFontManager::GetGlyphForCodepoint(uint32_t point)
 	return &this->glyphs[0][point];
 }
 
-void GLFontManager::UploadAtlases()
-{
-	for (size_t i = 0; i < this->atlases.size(); i++)
-	{
-		if (this->atlases[i].uploaded)
-		{
-			continue;
-		}
 
-		glBindBuffer(GL_TEXTURE_BUFFER, this->atlases[i].glyphDataBufId);
-		glBufferData(GL_TEXTURE_BUFFER, sq(kBezierAtlasSize) * kAtlasChannels,
-					 this->atlases[i].glyphDataBuf, GL_STREAM_DRAW);
-
-		glBindTexture(GL_TEXTURE_2D, this->atlases[i].gridAtlasId);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, kGridAtlasSize, kGridAtlasSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, this->atlases[i].gridAtlas);
-
-		atlases[i].uploaded = true;
-	}
-}
-
-void GLFontManager::UseAtlasTextures(uint16_t atlasIndex)
-{
-	if (atlasIndex >= this->atlases.size())
-	{
-		return;
-	}
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, this->atlases[atlasIndex].gridAtlasId);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_BUFFER, this->atlases[atlasIndex].glyphDataBufTexId);
-}

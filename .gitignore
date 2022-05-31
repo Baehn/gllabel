@@ -6,3 +6,5 @@ gridAtlas.bmp
 *.dSYM
 .DS_Store
 .syntastic_cpp_config
+target
+Cargo.lock

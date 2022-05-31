@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <stdexcept>
 
+extern "C" void print(int a, float b, bool c);
+
 
 // Converts X,Y to index in a row-major 2D array
 constexpr size_t xy2i(const size_t x, const size_t y, const size_t w) {
@@ -216,20 +218,20 @@ static void write_vgrid_cell_to_buffer(
 // Writes an entire vgrid into the atlas, where the bottom-left of the vgrid
 // will be written at (atX, atY). It will take up (grid->width, grid->height)
 // atlas texels and overwrite all contents in that rectangle.
-void VGridAtlas::WriteVGridAt(VGrid &grid, uint16_t atX, uint16_t atY)
+void WriteVGridAt(VGrid &grid, uint16_t atX, uint16_t atY, uint8_t *data, uint16_t  width, uint16_t height, uint8_t depth)
 {
-	// TODO: Write an assert() that can take a format message so the
-	// variables can be printed.
-	assert((atX + grid.width) <= this->width);
-	assert((atY + grid.height) <= this->height);
+	print(100, 100.3, false);
+
+	assert((atX + grid.width) <= width);
+	assert((atY + grid.height) <= height);
 
 	for (uint16_t y = 0; y < grid.height; y++) {
 		for (uint16_t x = 0; x < grid.width; x++) {
 			size_t cellIdx = xy2i(x, y, grid.width);
-			size_t atlasIdx = xy2i(atX+x, atY+y, this->width) * this->depth;
+			size_t atlasIdx = xy2i(atX+x, atY+y, width) * depth;
 
 			std::set<size_t> *beziers = &grid.cellBeziers[cellIdx];
-			if (beziers->size() > this->depth) {
+			if (beziers->size() > depth) {
 				// std::cerr << "WARN: Too many beziers in one grid cell ("
 				// 	<< "max: " << this->depth
 				// 	<< ", need: " << beziers->size()
@@ -239,8 +241,7 @@ void VGridAtlas::WriteVGridAt(VGrid &grid, uint16_t atX, uint16_t atY)
 
 			}
 
-			uint8_t *data = &this->data[atlasIdx];
-			write_vgrid_cell_to_buffer(grid, cellIdx, data, this->depth);
+			write_vgrid_cell_to_buffer(grid, cellIdx, &data[atlasIdx], depth);
 		}
 	}
 }

@@ -59,17 +59,8 @@ public:
 	static std::shared_ptr<GLFontManager> singleton;
 	static std::shared_ptr<GLFontManager> GetFontManager();
 
-	// FT_Face GetFontFromPath(std::string fontPath);
-	// FT_Face GetFontFromName(std::string fontName);
-	// FT_Face GetDefaultFont();
-
 	Glyph * GetGlyphForCodepoint(uint32_t point);
-	// void LoadASCII(FT_Face face);
 
-	void UploadAtlases();
-	void UseGlyphShader();
-	void SetShaderTransform(glm::mat4 transform);
-	void UseAtlasTextures(uint16_t atlasIndex);
 };
 
 class GLLabel
@@ -124,9 +115,7 @@ public:
 	~GLLabel();
 
 	void InsertText(std::u32string text, size_t index, glm::vec4 color);
-	void RemoveText(size_t index, size_t length);
 	inline void SetText(std::u32string text, glm::vec4 color) {
-		this->RemoveText(0, this->text.size());
 		this->InsertText(text, 0, color);
 	}
 
@@ -137,5 +126,4 @@ public:
 
 	// Render the label. Also uploads modified textures as necessary. 'time'
 	// should be passed in monotonic seconds (no specific zero time necessary).
-	void Render(float time, glm::mat4 transform);
 };

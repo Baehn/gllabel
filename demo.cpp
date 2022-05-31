@@ -15,6 +15,9 @@
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 
+extern "C" void hello();
+
+
 #define sq(x) ((x) * (x))
 
 static const uint8_t kGridMaxSize = 20;
@@ -415,6 +418,8 @@ void render(GLLabel *label, float time, glm::mat4 transform)
 
 int main()
 {
+	hello();
+
 	// Create a window
 	if (!glfwInit())
 	{
@@ -489,6 +494,21 @@ int main()
 	glBufferData(GL_ARRAY_BUFFER, Label->verts.capacity() * sizeof(GLLabel::GlyphVertex), NULL, GL_DYNAMIC_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, Label->verts.size() * sizeof(GLLabel::GlyphVertex), &Label->verts[0]);
 
+	GLFontManager::AtlasGroup& group = Label->manager->atlases[0];
+	glGenBuffers(1, &group.glyphDataBufId);
+	glBindBuffer(GL_TEXTURE_BUFFER, group.glyphDataBufId);
+	glGenTextures(1, &group.glyphDataBufTexId);
+	glBindTexture(GL_TEXTURE_BUFFER, group.glyphDataBufTexId);
+	glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA8, group.glyphDataBufId);
+
+	glGenTextures(1, &group.gridAtlasId);
+	glBindTexture(GL_TEXTURE_2D, group.gridAtlasId);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, kGridAtlasSize, kGridAtlasSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, group.gridAtlas);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
 	// GLLabel fpsLabel;
 	// fpsLabel.SetText(toUTF32("FPS:"), glm::vec4(0,0,0,1), defaultFace);
 
@@ -534,6 +554,8 @@ int main()
 		glfwPollEvents();
 		glfwSwapBuffers(window);
 	}
+
+	glDeleteProgram(3);
 
 	// Exit
 	glfwDestroyWindow(window);

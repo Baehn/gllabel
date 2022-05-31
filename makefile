@@ -24,9 +24,9 @@ GLM_INCLUDES=-I/usr/include
 
 CC=g++
 CPPFLAGS=-Wall -Wextra -g -std=c++14 -Iinclude ${GL_INCLUDES} ${GLFW_INCLUDES} ${GLEW_INCLUDES} ${GLM_INCLUDES} 
-LDLIBS=${GL_LIBS} ${GLFW_LIBS} ${GLEW_LIBS} 
+LDLIBS=${GL_LIBS} ${GLFW_LIBS} ${GLEW_LIBS}  -lflib -L ./target/debug/ -Wl,-rpath,./target/debug/
 
 run: demo
 	./demo
 
-demo: demo.cpp lib/gllabel.cpp lib/types.cpp lib/util.cpp lib/vgrid.cpp lib/cubic2quad.cpp 
+demo: demo.cpp lib/gllabel.cpp lib/types.cpp lib/util.cpp lib/vgrid.cpp 

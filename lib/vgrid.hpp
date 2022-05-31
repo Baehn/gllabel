@@ -26,17 +26,4 @@ struct VGrid {
 		int gridHeight);
 };
 
-struct VGridAtlas {
-	// 2D buffer, size is width*height, row-major, starts at bottom-left
-	uint8_t *data;
-
-	uint16_t width;
-	uint16_t height;
-
-	// Bytes per pixel, aka. how many bezier curves are allowed per grid
-	// cell. This should probably always be 4, since that's the limit of
-	// bytes per pixel that OpenGL supports (GL_RGBA8).
-	uint8_t depth;
-
-	void WriteVGridAt(VGrid &grid, uint16_t atX, uint16_t atY);
-};
+void WriteVGridAt(VGrid &grid, uint16_t atX, uint16_t atY, uint8_t *data, uint16_t width, uint16_t height, uint8_t depth);
