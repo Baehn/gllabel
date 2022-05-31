@@ -3,8 +3,11 @@
 #include <cmath>
 #include <assert.h>
 #include <stdexcept>
+#include <iostream>
 
 extern "C" void print(int a, float b, bool c);
+extern "C" Vec2* create();
+extern "C" void r_write_vgrid_cell_to_buffer(uint8_t* data, uint8_t depth);
 
 
 // Converts X,Y to index in a row-major 2D array
@@ -19,7 +22,7 @@ constexpr const T& clamp(const T &v, const T &min, const T &max) {
 
 // Returns a list of the beziers that intersect each grid cell.
 // The returned outer vector is always size gridWidth*gridHeight.
-static std::vector<std::set<size_t>> find_cells_intersections(
+static std::vector<std::vector<size_t>> find_cells_intersections(
 	std::vector<Bezier2> &beziers,
 	Vec2 glyphSize,
 	int gridWidth,
@@ -74,7 +77,16 @@ static std::vector<std::set<size_t>> find_cells_intersections(
 		}
 	}
 
-	return cellBeziers;
+	std::vector<std::vector<size_t>> ret;
+	ret.resize(gridWidth * gridHeight);
+
+	for(int i = 0; i < cellBeziers.size(); i++){
+		auto s = cellBeziers[i];
+		std::vector<size_t> v(s.begin(), s.end());
+		ret[i] = v;
+	}
+
+	return ret;
 }
 
 // Returns whether the midpoint of the cell is inside the glyph for each cell.
@@ -159,17 +171,18 @@ static const uint8_t kBezierIndexFirstReal = 2;
 // Writes the data of a single vgrid cell into a texel. At most `depth` bytes
 // will be written, even if there are more beziers.
 static void write_vgrid_cell_to_buffer(
-	VGrid &grid,
+	std::vector<std::vector<size_t>> &cellBeziers,
+	std::vector<char> &cellMids,
 	size_t cellIdx, // which cell in `grid` to write
 	uint8_t *data, // texel buffer, `depth` bytes long
 	uint8_t depth)
 {
-	std::set<size_t> *beziers = &grid.cellBeziers[cellIdx];
+	std::vector<size_t> *beziers = &cellBeziers[cellIdx];
 
 	// Clear texel
-	for (uint8_t i = 0; i < depth; i++) {
-		data[i] = kBezierIndexUnused;
-	}
+	// for (uint8_t i = 0; i < depth; i++) {
+	// 	data[i] = kBezierIndexUnused;
+	// }
 
 	// Write out bezier indices to atlas texel
 	size_t i = 0;
@@ -184,7 +197,7 @@ static void write_vgrid_cell_to_buffer(
 		i++;
 	}
 
-	bool midInside = grid.cellMids[cellIdx];
+	bool midInside = cellMids[cellIdx];
 
 	// Because the order of beziers doesn't matter and a single bezier is
 	// never referenced twice in one cell, metadata can be stored by
@@ -220,8 +233,6 @@ static void write_vgrid_cell_to_buffer(
 // atlas texels and overwrite all contents in that rectangle.
 void WriteVGridAt(VGrid &grid, uint16_t atX, uint16_t atY, uint8_t *data, uint16_t  width, uint16_t height, uint8_t depth)
 {
-	print(100, 100.3, false);
-
 	assert((atX + grid.width) <= width);
 	assert((atY + grid.height) <= height);
 
@@ -230,7 +241,7 @@ void WriteVGridAt(VGrid &grid, uint16_t atX, uint16_t atY, uint8_t *data, uint16
 			size_t cellIdx = xy2i(x, y, grid.width);
 			size_t atlasIdx = xy2i(atX+x, atY+y, width) * depth;
 
-			std::set<size_t> *beziers = &grid.cellBeziers[cellIdx];
+			std::vector<size_t> *beziers = &grid.cellBeziers[cellIdx];
 			if (beziers->size() > depth) {
 				// std::cerr << "WARN: Too many beziers in one grid cell ("
 				// 	<< "max: " << this->depth
@@ -240,8 +251,11 @@ void WriteVGridAt(VGrid &grid, uint16_t atX, uint16_t atY, uint8_t *data, uint16
 		        throw std::runtime_error("WARN: Too many beziers in one grid cell");
 
 			}
-
-			write_vgrid_cell_to_buffer(grid, cellIdx, &data[atlasIdx], depth);
+			for (uint8_t i = 0; i < depth; i++) {
+				(&data[atlasIdx])[i] = 100;
+			}
+			r_write_vgrid_cell_to_buffer(&data[atlasIdx], depth);
+			write_vgrid_cell_to_buffer(grid.cellBeziers, grid.cellMids, cellIdx, &data[atlasIdx], depth);
 		}
 	}
 }

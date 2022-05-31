@@ -9,7 +9,7 @@
 struct VGrid {
 	// For each cell, a set of bezier curves (indices referring to
 	// input bezier array) that pass through that cell.
-	std::vector<std::set<size_t>> cellBeziers;
+	std::vector<std::vector<size_t>> cellBeziers;
 
 	// For each cell, a boolean indicating whether the cell's midpoint is
 	// inside the glpyh (true) or outside (false).

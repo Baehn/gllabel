@@ -23,13 +23,13 @@ public:
 		// "RGBA pixels" (12 bytes) of data.
 		// Both atlases also encode some extra information, which is explained
 		// where it is used in the code.
-		GLuint gridAtlasId;
+		uint32_t gridAtlasId;
 		uint8_t *gridAtlas;
 		uint16_t nextGridPos[2]; // XY pixel coordinates
 		bool full; // For faster checking
 		bool uploaded;
 
-		GLuint glyphDataBufId, glyphDataBufTexId;
+		uint32_t glyphDataBufId, glyphDataBufTexId;
 		uint8_t *glyphDataBuf;
 		uint16_t glyphDataBufOffset; // pixel coordinates
 	};
@@ -86,7 +86,6 @@ private:
 	// six verts per glyph).
 	// Can't put them all into one array, because verts is needed alone as a
 	// buffer to upload to the GPU, and text is needed alone mostly for GetText.
-	std::u32string text;
 	std::vector<GLFontManager::Glyph *> glyphs;
 
 	bool showingCaret;
@@ -118,8 +117,6 @@ public:
 	inline void SetText(std::u32string text, glm::vec4 color) {
 		this->InsertText(text, 0, color);
 	}
-
-	inline std::u32string GetText() { return this->text; }
 
 	void SetHorzAlignment(Align horzAlign);
 	void SetVertAlignment(Align vertAlign);

@@ -36,12 +36,7 @@ static const uint8_t kAtlasChannels = 4;	  // Must be 4 (RGBA), otherwise code b
 GLLabel::GLLabel()
 	: showingCaret(false), caretPosition(0), prevTime(0)
 {
-	// this->lastColor = {0,0,0,255};
 	this->manager = GLFontManager::GetFontManager();
-	// this->lastFace = this->manager->GetDefaultFont();
-	// this->manager->LoadASCII(this->lastFace);
-
-	// glGenBuffers(1, &this->vertBuffer);
 }
 
 GLLabel::~GLLabel()
@@ -51,37 +46,16 @@ GLLabel::~GLLabel()
 
 void GLLabel::InsertText(std::u32string text, size_t index, glm::vec4 color)
 {
-	if (index > this->text.size())
-	{
-		index = this->text.size();
-	}
+	this->glyphs.resize(text.size());
 
-	this->text.insert(index, text);
-	this->glyphs.insert(this->glyphs.begin() + index, text.size(), nullptr);
-
-	size_t prevCapacity = this->verts.capacity();
 	GlyphVertex emptyVert{};
 	this->verts.insert(this->verts.begin() + index * 6, text.size() * 6, emptyVert);
 
 	glm::vec2 appendOffset(0, 0);
-	if (index > 0)
-	{
-		appendOffset = this->verts[(index - 1) * 6].pos;
-		if (this->glyphs[index - 1])
-		{
-			appendOffset += -glm::vec2(this->glyphs[index - 1]->offset[0], this->glyphs[index - 1]->offset[1]) + glm::vec2(this->glyphs[index - 1]->advance, 0);
-		}
-	}
-	glm::vec2 initialAppendOffset = appendOffset;
 
 	for (size_t i = 0; i < text.size(); i++)
 	{
 		GLFontManager::Glyph *glyph = this->manager->GetGlyphForCodepoint(text[i]);
-		if (!glyph)
-		{
-			this->verts[(index + i) * 6].pos = appendOffset;
-			continue;
-		}
 
 		GlyphVertex v[6]{}; // Insertion code depends on v[0] equaling appendOffset (therefore it is also set before continue;s above)
 		v[0].pos = glm::vec2(0, 0);
@@ -112,11 +86,6 @@ void GLLabel::InsertText(std::u32string text, size_t index, glm::vec4 color)
 		appendOffset.x += glyph->advance;
 		this->glyphs[index + i] = glyph;
 	}
-
-	// glBindBuffer(GL_ARRAY_BUFFER, this->vertBuffer);
-	// glBufferData(GL_ARRAY_BUFFER, this->verts.capacity() * sizeof(GLLabel::GlyphVertex), NULL, GL_DYNAMIC_DRAW);
-	// glBufferSubData(GL_ARRAY_BUFFER, 0, this->verts.size() * sizeof(GLLabel::GlyphVertex), &this->verts[0]);
-	// caretTime = 0;
 }
 
 GLFontManager::GLFontManager() //: defaultFace(nullptr)
@@ -191,6 +160,7 @@ GLFontManager::Glyph *GLFontManager::GetGlyphForCodepoint(uint32_t point)
 
 	AtlasGroup *atlas = this->GetOpenAtlasGroup();
 
+
 	int glyphWidth = 1398;
 	int glyphHeight = 1450;
 
@@ -212,47 +182,6 @@ GLFontManager::Glyph *GLFontManager::GetGlyphForCodepoint(uint32_t point)
 	// the bezier. Every six 16bit ints (3 pixels) is a full bezier
 	// Plus two pixels for grid position information
 	uint16_t bezierPixelLength = 2 + curves.size() * 3;
-
-	bool tooManyCurves = uint32_t(bezierPixelLength) > sq(uint32_t(kBezierAtlasSize));
-
-	if (curves.size() == 0 || tooManyCurves)
-	{
-		if (tooManyCurves)
-		{
-			std::cerr << "WARN: Glyph " << point << " has too many curves\n";
-		}
-
-		GLFontManager::Glyph glyph{};
-		glyph.bezierAtlasPos[1] = -1;
-		glyph.size[0] = glyphWidth;
-		glyph.size[1] = glyphHeight;
-		glyph.offset[0] = horiBearingX;
-		glyph.offset[1] = horiBearingY - glyphHeight;
-		glyph.advance = horiAdvance;
-		this->glyphs[0][point] = glyph;
-		return &this->glyphs[0][point];
-	}
-
-	// Find an open position in the bezier atlas
-	if (atlas->glyphDataBufOffset + bezierPixelLength > sq(kBezierAtlasSize))
-	{
-		atlas->full = true;
-		atlas->uploaded = false;
-		atlas = this->GetOpenAtlasGroup();
-	}
-
-	// Find an open position in the grid atlas
-	if (atlas->nextGridPos[0] + kGridMaxSize > kGridAtlasSize)
-	{
-		atlas->nextGridPos[1] += kGridMaxSize;
-		atlas->nextGridPos[0] = 0;
-		if (atlas->nextGridPos[1] >= kGridAtlasSize)
-		{
-			atlas->full = true;
-			atlas->uploaded = false;
-			atlas = this->GetOpenAtlasGroup(); // Should only ever happen once per glyph
-		}
-	}
 
 	uint8_t *bezierData = atlas->glyphDataBuf + (atlas->glyphDataBufOffset * kAtlasChannels);
 

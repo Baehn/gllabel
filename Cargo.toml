@@ -6,3 +6,6 @@ edition = "2018"
 
 [lib]
 crate-type = ["dylib"]
+
+[dependencies]
+ffi_utils = "*"
