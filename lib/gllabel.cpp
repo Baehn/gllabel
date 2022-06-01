@@ -148,15 +148,6 @@ struct bitmapdata
 
 GLFontManager::Glyph *GLFontManager::GetGlyphForCodepoint(uint32_t point)
 {
-	auto faceIt = this->glyphs.find(0);
-	if (faceIt != this->glyphs.end())
-	{
-		auto glyphIt = faceIt->second.find(point);
-		if (glyphIt != faceIt->second.end())
-		{
-			return &glyphIt->second;
-		}
-	}
 
 	AtlasGroup *atlas = this->GetOpenAtlasGroup();
 
@@ -184,6 +175,7 @@ GLFontManager::Glyph *GLFontManager::GetGlyphForCodepoint(uint32_t point)
 	uint16_t bezierPixelLength = 2 + curves.size() * 3;
 
 	uint8_t *bezierData = atlas->glyphDataBuf + (atlas->glyphDataBufOffset * kAtlasChannels);
+
 
 	Vec2 glyphSize(glyphWidth, glyphHeight);
 	write_glyph_data_to_buffer(

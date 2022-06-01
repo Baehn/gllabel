@@ -5,7 +5,7 @@ authors = ["me <me@mail.com>"]
 edition = "2018"
 
 [lib]
-crate-type = ["dylib"]
+crate-type = ["rlib", "dylib"]
 
 [dependencies]
 ffi_utils = "*"

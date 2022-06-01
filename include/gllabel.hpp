@@ -41,10 +41,10 @@ public:
 		uint16_t bezierAtlasPos[2]; // XZ pixel coordinates (Z being atlas index)
 		int16_t advance; // Amount to advance after character in FT units
 	};
+	std::map<int, std::map<uint32_t, Glyph> > glyphs;
 
 public: // TODO: private
 	std::vector<AtlasGroup> atlases;
-	std::map<int, std::map<uint32_t, Glyph> > glyphs;
 	// FT_Library ft;
 	GLuint glyphShader, uGridAtlas, uTransform;
 	GLuint uGlyphData;

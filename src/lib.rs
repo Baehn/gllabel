@@ -1,20 +1,21 @@
 use std::slice;
 
+use bezier::{Bezier2, Vec2};
+
+mod test_data;
+mod bezier;
+mod buffer;
+
 // src/lib.rs
 // #![feature(vec_into_raw_parts)]
 
-#[repr(C)]
-pub struct Vec2 {
-    x: f32,
-    y: f32,
+
+struct State {}
+
+impl State {
+    pub fn set_curves(curves: &Vec<Bezier2>) {}
 }
 
-#[repr(C)]
-struct Bezier2 {
-    e0: Vec2,
-    e1: Vec2,
-    c: Vec2,
-}
 
 #[no_mangle]
 pub extern "C" fn hello() {
@@ -50,6 +51,7 @@ pub extern "C" fn create() -> *mut Vec2 {
 }
 
 const kBezierIndexUnused: u8 = 0;
+pub static kGridMaxSize: u8 = 20;
 
 #[no_mangle]
 pub extern "C" fn r_write_vgrid_cell_to_buffer(
@@ -60,16 +62,16 @@ pub extern "C" fn r_write_vgrid_cell_to_buffer(
     data_ptr: *mut u8,
     depth: u8,
 ) {
-    std::vector<size_t> *beziers = &cellBeziers[cellIdx];
+    // std::vector<size_t> *beziers = &cellBeziers[cellIdx];
 
     // Clear texel
-    let data = unsafe { 
+    let data = unsafe {
         assert!(!data_ptr.is_null());
-        slice::from_raw_parts_mut(data_ptr, depth as usize) };
+        slice::from_raw_parts_mut(data_ptr, depth as usize)
+    };
     for item in data.iter_mut() {
         *item = kBezierIndexUnused;
     }
-
 
     // Write out bezier indices to atlas texel
     let mut i: usize = 0;

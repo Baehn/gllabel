@@ -1,4 +1,5 @@
 #include "util.hpp"
+#include <iostream>
 
 // A bezier is written as 6 16-bit integers (12 bytes). Increments buffer by
 // the number of bytes written (always 12). Coords are scaled from
@@ -24,6 +25,7 @@ void write_glyph_data_to_buffer(
 	uint16_t gridWidth,
 	uint16_t gridHeight)
 {
+	std::cout << std::endl;
 	uint16_t *buffer = (uint16_t *)buffer8;
 	buffer[0] = gridX;
 	buffer[1] = gridY;
@@ -33,5 +35,13 @@ void write_glyph_data_to_buffer(
 
 	for (size_t i = 0; i < beziers.size(); i++) {
 		write_bezier_to_buffer(&buffer, &beziers[i], &glyphSize);
+	}
+
+	std::cout << glyphSize.x << std::endl;
+	std::cout << glyphSize.y << std::endl;
+	uint16_t *buffer2 = (uint16_t *)buffer8;
+	for (int i = 0; i < 200; i++)
+	{
+		std::cout << unsigned(buffer2[i]) <<  ", ";
 	}
 }
