@@ -9,3 +9,4 @@ crate-type = ["rlib", "dylib"]
 
 [dependencies]
 ffi_utils = "*"
+ordered-float = "*"

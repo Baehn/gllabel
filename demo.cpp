@@ -15,8 +15,6 @@
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 
-extern "C" void hello();
-extern "C" uint32_t* reverse(uint32_t* numbers, uint32_t length);
 
 
 
@@ -420,13 +418,6 @@ void render(GLLabel *label, float time, glm::mat4 transform)
 
 int main()
 {
-	hello();
-
-	uint32_t numbers[] = {1, 2, 3, 4, 5, 6};
-	uint32_t length = sizeof numbers / sizeof *numbers;
-
-	uint32_t* reversed = reverse(numbers, length);
-	std::cout << reversed[2] << std::endl;
 
 	// Create a window
 	if (!glfwInit())

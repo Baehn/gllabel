@@ -1,5 +1,6 @@
 #include <cmath>
 #include "types.hpp"
+#include <iostream>
 
 inline bool almostEqual(float a, float b)
 {
@@ -22,6 +23,7 @@ inline bool almostEqual(float a, float b)
  */
 int Bezier2::IntersectHorz(float Y, float outX[2])
 {
+
 	Vec2 A = this->e0;
 	Vec2 B = this->c;
 	Vec2 C = this->e1;
@@ -39,6 +41,8 @@ int Bezier2::IntersectHorz(float Y, float outX[2])
 		if (T_VALID(t)) {
 			outX[i++] = X_FROM_T(t);
 		}
+		std::cout << "first" << i << " ";
+		std::cout << outX[0] << std::endl;
 		return i;
 	}
 

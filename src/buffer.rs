@@ -30,8 +30,9 @@ pub fn write_glyph_data_to_buffer(
 
 #[cfg(test)]
 mod tests {
+    use crate::grid::kGridMaxSize;
     use crate::test_data::test_data::test_curves;
-    use crate::{bezier::Vec2, buffer::write_glyph_data_to_buffer, kGridMaxSize};
+    use crate::{bezier::Vec2, buffer::write_glyph_data_to_buffer};
 
     #[test]
     pub fn test_write_glyph_data_to_buffer() {
