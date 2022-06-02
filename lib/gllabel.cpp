@@ -27,7 +27,6 @@
 
 std::shared_ptr<GLFontManager> GLFontManager::singleton = nullptr;
 
-
 static const uint8_t kGridMaxSize = 20;
 static const uint16_t kGridAtlasSize = 256;	  // Fits exactly 1024 8x8 grids
 static const uint16_t kBezierAtlasSize = 256; // Fits around 700-1000 glyphs, depending on their curves
@@ -86,6 +85,23 @@ void GLLabel::InsertText(std::u32string text, size_t index, glm::vec4 color)
 		appendOffset.x += glyph->advance;
 		this->glyphs[index + i] = glyph;
 	}
+
+	// int s = verts.size() * sizeof(GLLabel::GlyphVertex);
+	// for (int i = 0; i < s; i++)
+	// {
+	// 	std::cout << (int)((u_int8_t*)(&verts[0]))[i] << ", ";
+	// }
+	// std::cout << std::endl;
+
+
+	int s = 256;
+	auto buff = this->manager->atlases[0].glyphDataBuf;
+	for (int i = 0; i < s; i++)
+	{
+		std::cout << (int)(buff[i]) << ", ";
+	}
+	std::cout << std::endl;
+
 }
 
 GLFontManager::GLFontManager() //: defaultFace(nullptr)
@@ -151,7 +167,6 @@ GLFontManager::Glyph *GLFontManager::GetGlyphForCodepoint(uint32_t point)
 
 	AtlasGroup *atlas = this->GetOpenAtlasGroup();
 
-
 	int glyphWidth = 1398;
 	int glyphHeight = 1450;
 
@@ -161,7 +176,6 @@ GLFontManager::Glyph *GLFontManager::GetGlyphForCodepoint(uint32_t point)
 
 	uint8_t gridWidth = kGridMaxSize;
 	uint8_t gridHeight = kGridMaxSize;
-
 
 	std::vector<Bezier2> curves(19);
 	write_test_curves(curves);
@@ -175,7 +189,6 @@ GLFontManager::Glyph *GLFontManager::GetGlyphForCodepoint(uint32_t point)
 	uint16_t bezierPixelLength = 2 + curves.size() * 3;
 
 	uint8_t *bezierData = atlas->glyphDataBuf + (atlas->glyphDataBufOffset * kAtlasChannels);
-
 
 	Vec2 glyphSize(glyphWidth, glyphHeight);
 	write_glyph_data_to_buffer(
@@ -206,5 +219,3 @@ GLFontManager::Glyph *GLFontManager::GetGlyphForCodepoint(uint32_t point)
 
 	return &this->glyphs[0][point];
 }
-
-

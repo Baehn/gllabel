@@ -139,7 +139,7 @@ static std::vector<char> find_cells_mids_inside(
 		{
 			float end = *it;
 
-				std::cout << end << std::endl;
+				// std::cout << end << std::endl;
 
 			// Upon exiting, the midpoint of every cell between
 			// start and end, rounded to the nearest int, is
@@ -190,14 +190,14 @@ static std::vector<char> find_cells_mids_inside(
 			// }
 			// std::cout << std::endl;
 	
-			std::cout << gridWidth << std::endl;
-			std::cout << gridHeight << std::endl;
-			std::cout << glyphSize.x << std::endl;
-			std::cout << glyphSize.y << std::endl;
-	for(int i = 0; i< cellMids.size(); i++){
-		std::cout << (bool)cellMids[i] << ", ";
-	}
-	std::cout << std::endl;
+	// 		std::cout << gridWidth << std::endl;
+	// 		std::cout << gridHeight << std::endl;
+	// 		std::cout << glyphSize.x << std::endl;
+	// 		std::cout << glyphSize.y << std::endl;
+	// for(int i = 0; i< cellMids.size(); i++){
+	// 	std::cout << (bool)cellMids[i] << ", ";
+	// }
+	// std::cout << std::endl;
 
 	return cellMids;
 }
@@ -299,11 +299,15 @@ void WriteVGridAt(VGrid &grid, uint16_t atX, uint16_t atY, uint8_t *data, uint16
 	assert((atX + grid.width) <= width);
 	assert((atY + grid.height) <= height);
 
+			std::cout << grid.width << std::endl;
+			std::cout << grid.height << std::endl;
+
 	for (uint16_t y = 0; y < grid.height; y++)
 	{
 		for (uint16_t x = 0; x < grid.width; x++)
 		{
 			size_t cellIdx = xy2i(x, y, grid.width);
+			// std::cout << cellIdx << std::endl;
 			size_t atlasIdx = xy2i(atX + x, atY + y, width) * depth;
 
 			std::vector<size_t> *beziers = &grid.cellBeziers[cellIdx];
@@ -323,4 +327,9 @@ void WriteVGridAt(VGrid &grid, uint16_t atX, uint16_t atY, uint8_t *data, uint16
 			write_vgrid_cell_to_buffer(grid.cellBeziers, grid.cellMids, cellIdx, &data[atlasIdx], depth);
 		}
 	}
+	// std::cout << std::endl;
+	// for(int i = 0; i< 256; i++){
+	// 	std::cout << (u_int16_t)data[i] << ", ";
+	// }
+	// std::cout << std::endl;
 }

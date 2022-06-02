@@ -1,5 +1,5 @@
-#[repr(C)]
-#[derive(Default, Clone)]
+#[repr(C, packed)]
+#[derive(Default, Copy, Clone)]
 pub struct Vec2 {
     pub x: f32,
     pub y: f32,
