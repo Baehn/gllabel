@@ -1,0 +1,17 @@
+[package]
+name = "ui"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+glow = "*"
+glutin = "*"
+
+#[target.'cfg(not(any(target_arch = "wasm32")))'.dependencies]
+#glutin = { version = "0.24", optional = true }
+#sdl2 = { version = "0.34", optional = true }
+
+#[target.'cfg(target_arch = "wasm32")'.dependencies]
+#web-sys = { version = "0.3", features=["HtmlCanvasElement", "WebGl2RenderingContext", "Window"] }
+#wasm-bindgen = { version = "0.2" }
