@@ -14,13 +14,13 @@ const kBezierIndexUnused: u8 = 0;
 const kBezierIndexFirstReal: u8 = 2;
 const kBezierIndexSortMeta: u8 = 1;
 pub static kGridAtlasSize: u16 = 256; // Fits exactly 1024 8x8 grids
-const kAtlasChannels: u8 = 4; // Must be 4 (RGBA), otherwise code breaks
-const kBezierAtlasSize: u16 = 256; // Fits around 700-1000 glyphs, depending on their curves
+pub static kAtlasChannels: u8 = 4; // Must be 4 (RGBA), otherwise code breaks
+pub static kBezierAtlasSize: u16 = 256; // Fits around 700-1000 glyphs, depending on their curves
 pub static kGridMaxSize: u8 = 20;
 
 #[repr(C, packed)]
 #[derive(Default, Copy, Clone)]
-struct GlVertex {
+pub struct GlVertex {
     // XY coords of the vertex
     pos: Vec2,
 
@@ -392,9 +392,71 @@ fn get_glyph_for_codepoint(
     glyph
 }
 
+pub struct Grid {
+    pub verts: Vec<GlVertex>,
+    glyph_data_buf: Vec<u16>,
+    grid_atlas: Vec<u8>,
+}
+
+impl Grid {
+    pub fn atlas_ptr(&self) -> *const std::ffi::c_void {
+        self.grid_atlas.as_ptr() as *const std::os::raw::c_void
+    }
+
+    pub fn verts_ptr(&self) -> *const std::ffi::c_void {
+        self.verts.as_ptr() as *const std::os::raw::c_void
+    }
+
+    pub fn glgph_ptr(&self) -> *const std::ffi::c_void {
+        self.glyph_data_buf.as_ptr() as *const std::os::raw::c_void
+    }
+}
+
+pub fn text_vertex_shader() -> String {
+    include_str!("./shaders/text.vert").to_string()
+}
+
+pub fn text_framgent_shader() -> String {
+    include_str!("./shaders/text.frag").to_string()
+}
+
+impl Default for Grid {
+    fn default() -> Self {
+        let mut glyph_data_buf = Vec::new();
+        glyph_data_buf.resize(
+            kBezierAtlasSize as usize * kBezierAtlasSize as usize * (kAtlasChannels / 2) as usize,
+            0,
+        );
+        let mut grid_atlas = Vec::new();
+        grid_atlas.resize(
+            kGridAtlasSize as usize * kGridAtlasSize as usize * kAtlasChannels as usize,
+            0,
+        );
+        Grid {
+            verts: Vec::new(),
+            glyph_data_buf,
+            grid_atlas,
+        }
+    }
+}
+
+pub fn create_test_struct() -> Grid {
+    let mut grid = Grid::default();
+
+    let curves = crate::test_data::test_data::test_curves();
+    insert_curves(
+        &mut grid.verts,
+        &curves,
+        &mut grid.glyph_data_buf,
+        &mut grid.grid_atlas,
+    );
+
+    grid
+}
+
 #[cfg(test)]
 mod test {
-    use std::{iter::zip, mem::size_of};
+    use std::mem::size_of;
 
     use crate::{
         bezier::{Bezier2, Vec2},

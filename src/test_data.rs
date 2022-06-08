@@ -1,4 +1,4 @@
-#[cfg(test)]
+// #[cfg(test)]
 pub mod test_data {
     use crate::Bezier2;
 

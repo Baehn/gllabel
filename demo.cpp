@@ -483,12 +483,12 @@ int main()
 
 	// Create new label
 	Label = new GLLabel();
-	glGenBuffers(1, &Label->vertBuffer);
 
 	std::cout << "Loading font files\n";
 
 	Label->SetText(U"O", glm::vec4(0.5, 0, 0, 1));
 
+	glGenBuffers(1, &Label->vertBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, Label->vertBuffer);
 	glBufferData(GL_ARRAY_BUFFER, Label->verts.capacity() * sizeof(GLLabel::GlyphVertex), NULL, GL_DYNAMIC_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, Label->verts.size() * sizeof(GLLabel::GlyphVertex), &Label->verts[0]);
