@@ -13,7 +13,7 @@ use crate::{
 const kBezierIndexUnused: u8 = 0;
 const kBezierIndexFirstReal: u8 = 2;
 const kBezierIndexSortMeta: u8 = 1;
-const kGridAtlasSize: u16 = 256; // Fits exactly 1024 8x8 grids
+pub static kGridAtlasSize: u16 = 256; // Fits exactly 1024 8x8 grids
 const kAtlasChannels: u8 = 4; // Must be 4 (RGBA), otherwise code breaks
 const kBezierAtlasSize: u16 = 256; // Fits around 700-1000 glyphs, depending on their curves
 pub static kGridMaxSize: u8 = 20;

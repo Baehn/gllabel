@@ -5,7 +5,7 @@ use bezier::{Bezier2, Vec2};
 mod test_data;
 mod bezier;
 mod buffer;
-mod grid;
+pub mod grid;
 
 // src/lib.rs
 // #![feature(vec_into_raw_parts)]
