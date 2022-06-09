@@ -22,16 +22,16 @@ pub static kGridMaxSize: u8 = 20;
 #[derive(Default, Copy, Clone)]
 pub struct GlVertex {
     // XY coords of the vertex
-    pos: Vec2,
+    pub pos: Vec2,
 
     // Bit 0 (low) is norm coord X (varies per vertex)
     // Bit 1 is norm coord Y (varies per vertex)
     // Bits 2-31 are texel offset (byte offset / 4) into
     //   glyphDataBuf (same for all verticies of a glyph)
-    data: u32,
+    pub data: u32,
 
     // RGBA color [0,255]
-    color: [u8; 4],
+    pub color: [u8; 4],
 }
 
 #[derive(Default)]
@@ -396,6 +396,14 @@ pub struct Grid {
     pub verts: Vec<GlVertex>,
     glyph_data_buf: Vec<u16>,
     grid_atlas: Vec<u8>,
+    pub vertex_array_id: u32,
+    pub prog_id: u32,
+
+    pub glyph_data_buf_id: u32,
+    pub glyph_data_buf_tex_id: u32,
+    pub grid_atlas_id: u32,
+    pub vert_buffer_id: u32,
+    pub u_transform: i32,
 }
 
 impl Grid {
@@ -436,6 +444,13 @@ impl Default for Grid {
             verts: Vec::new(),
             glyph_data_buf,
             grid_atlas,
+            vertex_array_id: 0,
+            prog_id: 0,
+            glyph_data_buf_id: 0,
+            glyph_data_buf_tex_id: 0,
+            grid_atlas_id: 0,
+            vert_buffer_id: 0,
+            u_transform: 0,
         }
     }
 }

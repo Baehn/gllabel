@@ -1,8 +1,3 @@
-
-// This shader slightly modified from source code by Will Dobbie.
-// See dobbieText.cpp for more info.
-
-#version 330 core
 precision highp float;
 
 #define numSS 4

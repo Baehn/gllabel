@@ -10,6 +10,7 @@ glutin = "*"
 gl = "0.14.0"
 flib = {path = "../"}
 mat4 = "*"
+memoffset = "*"
 
 #[target.'cfg(not(any(target_arch = "wasm32")))'.dependencies]
 #glutin = { version = "0.24", optional = true }

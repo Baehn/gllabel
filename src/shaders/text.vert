@@ -1,5 +1,3 @@
-
-#version 330 core
 uniform samplerBuffer uGlyphData;
 uniform mat4 uTransform;
 
