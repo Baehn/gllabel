@@ -406,9 +406,41 @@ pub struct Grid {
     pub u_transform: i32,
 }
 
+fn slice_to_u8<T>(slice: &[T]) -> &[u8] {
+    unsafe {
+        std::slice::from_raw_parts(
+            slice.as_ptr() as *const u8,
+            slice.len() * ::std::mem::size_of::<T>(),
+        )
+    }
+}
+
+unsafe fn vec_as_u8_slice<T: Sized>(p: Vec<T>) -> &'static [u8] {
+    // ::std::slice::from_raw_parts(
+    //     (p as *const Vec<T>) as *const u8,
+    //     ::std::mem::size_of::<T>(),
+    // )
+    let (ptr, size) = ffi_utils::vec_into_raw_parts(p);
+    // let ptr = (verts.clone() as *const Vec<GlVertex>) as *const u8;
+    let size = size * std::mem::size_of::<T>() as usize;
+    ::std::slice::from_raw_parts(ptr as *mut u8, size)
+}
+
 impl Grid {
     pub fn atlas_ptr(&self) -> *const std::ffi::c_void {
         self.grid_atlas.as_ptr() as *const std::os::raw::c_void
+    }
+
+    pub fn atlas(&self) -> Option<&[u8]> {
+        Some(&self.grid_atlas)
+    }
+
+    pub fn verts(&self) -> &[u8] {
+        unsafe { slice_to_u8(&self.verts) }
+    }
+
+    pub fn glyphs(&self) -> &[u8] {
+        unsafe { slice_to_u8(&self.glyph_data_buf) }
     }
 
     pub fn verts_ptr(&self) -> *const std::ffi::c_void {
@@ -475,7 +507,7 @@ mod test {
 
     use crate::{
         bezier::{Bezier2, Vec2},
-        grid::{find_cells_mids_inside, kBezierAtlasSize},
+        grid::{find_cells_mids_inside, kBezierAtlasSize, slice_to_u8, vec_as_u8_slice},
         test_data::test_data::test_curves,
     };
 
@@ -585,7 +617,7 @@ mod test {
         // let mut vec = unsafe {
         //     assert!(!array.is_null());
         //     Vec::from_raw_parts(array, size as usize, size as usize)
-        let (ptr, size) = ffi_utils::vec_into_raw_parts(verts);
+        let (ptr, size) = ffi_utils::vec_into_raw_parts(verts.clone());
         let vec: Vec<u8> = unsafe {
             let size = size * size_of::<GlVertex>() as usize;
             Vec::from_raw_parts(ptr as *mut u8, size, size)
@@ -600,6 +632,35 @@ mod test {
                 193, 2, 0, 0, 0, 127, 0, 0, 255,
             ]
         );
+        let (ptr, size) = ffi_utils::vec_into_raw_parts(verts.clone());
+        let vec: &[u8] = unsafe {
+            // let ptr = (verts.clone() as *const Vec<GlVertex>) as *const u8;
+            let size = size * size_of::<GlVertex>() as usize;
+            ::std::slice::from_raw_parts(ptr as *mut u8, size)
+        };
+        assert_eq!(
+            vec,
+            vec![
+                0, 0, 194, 66, 0, 0, 160, 193, 0, 0, 0, 0, 127, 0, 0, 255, 0, 224, 186, 68, 0, 0,
+                160, 193, 2, 0, 0, 0, 127, 0, 0, 255, 0, 0, 194, 66, 0, 192, 178, 68, 1, 0, 0, 0,
+                127, 0, 0, 255, 0, 224, 186, 68, 0, 192, 178, 68, 3, 0, 0, 0, 127, 0, 0, 255, 0, 0,
+                194, 66, 0, 192, 178, 68, 1, 0, 0, 0, 127, 0, 0, 255, 0, 224, 186, 68, 0, 0, 160,
+                193, 2, 0, 0, 0, 127, 0, 0, 255,
+            ]
+        );
+        unsafe {
+            let verts = slice_to_u8(&verts);
+            assert_eq!(
+                verts,
+                [
+                    0, 0, 194, 66, 0, 0, 160, 193, 0, 0, 0, 0, 127, 0, 0, 255, 0, 224, 186, 68, 0,
+                    0, 160, 193, 2, 0, 0, 0, 127, 0, 0, 255, 0, 0, 194, 66, 0, 192, 178, 68, 1, 0,
+                    0, 0, 127, 0, 0, 255, 0, 224, 186, 68, 0, 192, 178, 68, 3, 0, 0, 0, 127, 0, 0,
+                    255, 0, 0, 194, 66, 0, 192, 178, 68, 1, 0, 0, 0, 127, 0, 0, 255, 0, 224, 186,
+                    68, 0, 0, 160, 193, 2, 0, 0, 0, 127, 0, 0, 255,
+                ]
+            );
+        }
         assert_eq!(
             grid_atlas[0..256],
             [

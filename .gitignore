@@ -8,3 +8,4 @@ gridAtlas.bmp
 .syntastic_cpp_config
 target
 Cargo.lock
+*.log

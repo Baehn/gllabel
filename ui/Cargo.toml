@@ -5,7 +5,7 @@ edition = "2021"
 
 
 [dependencies]
-glow = "*"
+glow = {git = "https://github.com/grovesNL/glow"}
 glutin = "*"
 gl = "0.14.0"
 flib = {path = "../"}

@@ -389,8 +389,8 @@ void render(GLLabel *label, float time, glm::mat4 transform)
 	glBufferData(GL_TEXTURE_BUFFER, sq(kBezierAtlasSize) * kAtlasChannels,
 				 label->manager->atlases[0].glyphDataBuf, GL_STREAM_DRAW);
 
-	glBindTexture(GL_TEXTURE_2D, label->manager->atlases[0].gridAtlasId);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, kGridAtlasSize, kGridAtlasSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, label->manager->atlases[0].gridAtlas);
+	/* glBindTexture(GL_TEXTURE_2D, label->manager->atlases[0].gridAtlasId); */
+	/* glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, kGridAtlasSize, kGridAtlasSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, label->manager->atlases[0].gridAtlas); */
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, label->manager->atlases[0].gridAtlasId);
@@ -407,6 +407,10 @@ void render(GLLabel *label, float time, glm::mat4 transform)
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GLLabel::GlyphVertex), (void *)offsetof(GLLabel::GlyphVertex, pos));
 	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(GLLabel::GlyphVertex), (void *)offsetof(GLLabel::GlyphVertex, data));
 	glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(GLLabel::GlyphVertex), (void *)offsetof(GLLabel::GlyphVertex, color));
+
+	/* std::cout << sizeof(GLLabel::GlyphVertex) << ", " << offsetof(GLLabel::GlyphVertex, pos) << std::endl; */
+	/* std::cout << sizeof(GLLabel::GlyphVertex) << ", " << offsetof(GLLabel::GlyphVertex, data) << std::endl; */
+	/* std::cout << sizeof(GLLabel::GlyphVertex) << ", " << offsetof(GLLabel::GlyphVertex, data) << std::endl; */
 
 	glDrawArrays(GL_TRIANGLES, 0, label->verts.size());
 
@@ -534,6 +538,11 @@ int main()
 			textMat = glm::scale(textMat, glm::vec3(sin(time) * 2, cos(time), 1.0));
 		}
 		textMat = glm::scale(textMat, pt(8));
+
+		/* for(int i=0; i< 16; i++){ */
+		/* std::cout << glm::value_ptr(textMat)[i] << ", "; */
+		/* } */
+		/* std::cout << std::endl; */
 
 		render(Label, time, textMat);
 

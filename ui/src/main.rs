@@ -70,7 +70,7 @@ fn main() {
         // let grid = [0_u8, 0];
         gl::Viewport(0, 0, width as i32, height as i32);
 
-        prepare_texture(&ctx, &mut grid);
+        let state = GLState::create(&ctx, &mut grid);
 
         //let vertex_array = ctx
         //    .create_vertex_array()
@@ -159,7 +159,7 @@ fn main() {
                         // ctx.clear(glow::COLOR_BUFFER_BIT);
                         // ctx.draw_arrays(glow::TRIANGLES, 0, 3);
 
-                        render(&grid, iden);
+                        state.render(&ctx, &grid, iden);
 
                         window.swap_buffers().unwrap();
                     }
@@ -186,7 +186,7 @@ fn main() {
         }
     }
 }
-use glow::{Context, HasContext, NativeProgram};
+use glow::{Context, HasContext, NativeProgram, NativeTexture};
 
 // use glow::*;
 fn load_shaders(
@@ -217,209 +217,210 @@ fn load_shaders(
 
 struct ExposedProgram(u32);
 
-fn prepare_texture(ctx: &Context, grid: &mut Grid) {
-    unsafe {
-        // let mut vertex_array_id = 0;
-        // gl::GenVertexArrays(1, &mut grid.vertex_array_id);
-        // gl::BindVertexArray(vertex_array_id);
-
-        let vertex_array = ctx
-            .create_vertex_array()
-            .expect("Cannot create vertex array");
-        ctx.bind_vertex_array(Some(vertex_array));
-
-        gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
-        gl::Enable(gl::BLEND);
-
-        let vert = text_vertex_shader();
-        let frag = text_framgent_shader();
-        let program: NativeProgram = ctx.create_program().expect("Cannot create program");
-        let shader_sources = [
-            (glow::VERTEX_SHADER, vert.as_str()),
-            (glow::FRAGMENT_SHADER, frag.as_str()),
-        ];
-
-        let prog_id: ExposedProgram = unsafe { std::mem::transmute(program) };
-        grid.prog_id = prog_id.0;
-
-        let shaders = load_shaders(&ctx, &program, shader_sources, "#version 330 core");
-
-        let name = std::ffi::CString::new("vPosition").expect("CString::new failed");
-        gl::BindAttribLocation(grid.prog_id, 0, name.as_ptr());
-        let name = std::ffi::CString::new("vData").expect("CString::new failed");
-        gl::BindAttribLocation(grid.prog_id, 1, name.as_ptr());
-        let name = std::ffi::CString::new("vColor").expect("CString::new failed");
-        gl::BindAttribLocation(grid.prog_id, 2, name.as_ptr());
-
-        gl::LinkProgram(grid.prog_id);
-        // ctx.link_program(program);
-        // if !ctx.get_program_link_status(program) {
-        //     panic!("{}", ctx.get_program_info_log(program));
-        // }
-
-        for shader in shaders {
-            ctx.detach_shader(program, shader);
-            ctx.delete_shader(shader);
-        }
-
-        ctx.use_program(Some(program));
-
-        // gl::LoadShaderProgram(text_vertex_shader(), text_framgent_shader());
-        // gl::UseProgram(3);
-        //
-        //
-        let name = std::ffi::CString::new("uGridAtlas").expect("CString::new failed");
-        let u_grid_atlas = gl::GetUniformLocation(grid.prog_id, name.as_ptr());
-        let name = std::ffi::CString::new("uGlyphData").expect("CString::new failed");
-        let u_glyph_data = gl::GetUniformLocation(grid.prog_id, name.as_ptr());
-        let name = std::ffi::CString::new("uTransform").expect("CString::new failed");
-        grid.u_transform = gl::GetUniformLocation(grid.prog_id, name.as_ptr()) as i32;
-
-        gl::Uniform1i(u_grid_atlas, 0);
-        gl::Uniform1i(u_glyph_data, 1);
-
-        let iden: [f32; 16] = [
-            3.39084e-05,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            5.42535e-05,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            -0.9,
-            0.6,
-            0.0,
-            1.0,
-        ];
-        gl::UniformMatrix4fv(grid.u_transform, 1, gl::FALSE, iden.as_ptr());
-
-        let grid_atlas = grid.atlas_ptr();
-
-        gl::GenBuffers(1, &mut grid.vert_buffer_id);
-        gl::BindBuffer(gl::ARRAY_BUFFER, grid.vert_buffer_id);
-        gl::BufferData(
-            gl::ARRAY_BUFFER,
-            (grid.verts.capacity() * size_of::<GlVertex>()) as isize,
-            std::ptr::null(),
-            gl::DYNAMIC_DRAW,
-        );
-        gl::BufferSubData(
-            gl::ARRAY_BUFFER,
-            0,
-            (grid.verts.len() * size_of::<GlVertex>()) as isize,
-            grid.verts_ptr(),
-        );
-
-        gl::GenBuffers(1, &mut grid.glyph_data_buf_id);
-        gl::BindBuffer(gl::TEXTURE_BUFFER, grid.glyph_data_buf_id);
-
-        gl::GenTextures(1, &mut grid.glyph_data_buf_tex_id);
-        gl::BindTexture(gl::TEXTURE_BUFFER, grid.glyph_data_buf_tex_id);
-        gl::TexBuffer(gl::TEXTURE_BUFFER, gl::RGBA8, grid.glyph_data_buf_id);
-
-        gl::GenTextures(1, &mut grid.grid_atlas_id);
-        gl::BindTexture(gl::TEXTURE_2D, grid.grid_atlas_id);
-        gl::TexImage2D(
-            gl::TEXTURE_2D,
-            0,
-            gl::RGBA8 as i32,
-            kGridAtlasSize.into(),
-            kGridAtlasSize.into(),
-            0,
-            gl::RGBA,
-            gl::UNSIGNED_BYTE,
-            grid_atlas,
-        );
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_R, gl::CLAMP_TO_EDGE as i32);
-    }
+struct GLState {
+    atlas_texture: NativeTexture,
+    program: NativeProgram,
+    vert_buffer: glow::NativeBuffer,
+    glyph_buffer: glow::NativeBuffer,
+    glyph_texture: NativeTexture,
 }
-fn render(grid: &Grid, transform: [f32; 16]) {
-    // println!(
-    //     "{} {} {}",
-    //     grid.prog_id, grid.glyph_data_buf_id, grid.glyph_data_buf_tex_id
-    // );
-    unsafe {
-        // render
 
-        gl::ClearColor(160.0 / 255.0, 169.0 / 255.0, 175.0 / 255.0, 1.0);
-        gl::Clear(gl::COLOR_BUFFER_BIT);
+impl GLState {
+    fn create(ctx: &Context, grid: &mut Grid) -> GLState {
+        unsafe {
+            let vertex_array = ctx
+                .create_vertex_array()
+                .expect("Cannot create vertex array");
+            ctx.bind_vertex_array(Some(vertex_array));
 
-        gl::UseProgram(grid.prog_id);
-        gl::UniformMatrix4fv(grid.u_transform, 1, gl::FALSE, transform.as_ptr());
+            ctx.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
+            ctx.enable(glow::BLEND);
 
-        gl::BindBuffer(gl::TEXTURE_BUFFER, grid.glyph_data_buf_id);
-        gl::BufferData(
-            gl::TEXTURE_BUFFER,
-            (kBezierAtlasSize as usize * kBezierAtlasSize as usize * (kAtlasChannels) as usize)
-                as isize,
-            grid.glgph_ptr(),
-            gl::STREAM_DRAW,
-        );
+            let vert = text_vertex_shader();
+            let frag = text_framgent_shader();
+            let program: NativeProgram = ctx.create_program().expect("Cannot create program");
+            let shader_sources = [
+                (glow::VERTEX_SHADER, vert.as_str()),
+                (glow::FRAGMENT_SHADER, frag.as_str()),
+            ];
 
-        gl::ActiveTexture(gl::TEXTURE0);
-        gl::BindTexture(gl::TEXTURE_2D, grid.grid_atlas_id);
-        gl::ActiveTexture(gl::TEXTURE1);
-        gl::BindTexture(gl::TEXTURE_BUFFER, grid.glyph_data_buf_tex_id);
+            let prog_id: ExposedProgram = unsafe { std::mem::transmute(program) };
+            grid.prog_id = prog_id.0;
 
-        gl::Enable(gl::BLEND);
-        gl::BindBuffer(gl::ARRAY_BUFFER, grid.vert_buffer_id);
-        gl::EnableVertexAttribArray(0);
-        gl::EnableVertexAttribArray(1);
-        gl::EnableVertexAttribArray(2);
-        gl::VertexAttribPointer(
-            0,
-            2,
-            gl::FLOAT,
-            gl::FALSE,
-            size_of::<GlVertex>() as i32,
-            offset_of!(GlVertex, pos) as *const gl::types::GLvoid,
-        );
+            let shaders = load_shaders(&ctx, &program, shader_sources, "#version 330 core");
 
-        gl::VertexAttribIPointer(
-            1,
-            1,
-            gl::UNSIGNED_INT,
-            size_of::<GlVertex>() as i32,
-            offset_of!(GlVertex, data) as *const gl::types::GLvoid,
-        );
-        gl::VertexAttribPointer(
-            2,
-            4,
-            gl::UNSIGNED_BYTE,
-            gl::TRUE,
-            size_of::<GlVertex>() as i32,
-            offset_of!(GlVertex, color) as *const gl::types::GLvoid,
-        );
+            ctx.bind_attrib_location(program, 0, "vPosition");
+            ctx.bind_attrib_location(program, 1, "vData");
+            ctx.bind_attrib_location(program, 2, "vColor");
 
-        // println!(
-        //     "{} {}",
-        //     size_of::<GlVertex>() as i32,
-        //     offset_of!(GlVertex, pos)
-        // );
-        // println!(
-        //     "{} {}",
-        //     size_of::<GlVertex>() as i32,
-        //     offset_of!(GlVertex, data)
-        // );
-        // println!(
-        //     "{} {}",
-        //     size_of::<GlVertex>() as i32,
-        //     offset_of!(GlVertex, color)
-        // );
+            ctx.link_program(program);
+            if !ctx.get_program_link_status(program) {
+                panic!("{}", ctx.get_program_info_log(program));
+            }
 
-        gl::DrawArrays(gl::TRIANGLES, 0, grid.verts.len() as i32);
+            for shader in shaders {
+                ctx.detach_shader(program, shader);
+                ctx.delete_shader(shader);
+            }
 
-        gl::DisableVertexAttribArray(0);
-        gl::DisableVertexAttribArray(1);
-        gl::DisableVertexAttribArray(2);
-        gl::Disable(gl::BLEND);
+            ctx.use_program(Some(program));
+
+            let u_grid_atlas = ctx.get_uniform_location(program, "uGridAtlas");
+            ctx.uniform_1_i32(u_grid_atlas.as_ref(), 0);
+
+            let u_glyph_data = ctx.get_uniform_location(program, "uGlyphData");
+            ctx.uniform_1_i32(u_glyph_data.as_ref(), 1);
+
+            let iden: [f32; 16] = [
+                3.39084e-05,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                5.42535e-05,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                -0.9,
+                0.6,
+                0.0,
+                1.0,
+            ];
+
+            let u_transform = ctx.get_uniform_location(program, "uTransform");
+            ctx.uniform_matrix_4_f32_slice(u_transform.as_ref(), false, &iden);
+
+            let vert_buffer = {
+                let vert_buffer = ctx.create_buffer().unwrap();
+                ctx.bind_buffer(glow::ARRAY_BUFFER, Some(vert_buffer));
+                ctx.buffer_data_size(
+                    gl::ARRAY_BUFFER,
+                    (grid.verts.capacity() * size_of::<GlVertex>()) as i32,
+                    glow::DYNAMIC_DRAW,
+                );
+                ctx.buffer_sub_data_u8_slice(gl::ARRAY_BUFFER, 0, grid.verts());
+
+                vert_buffer
+            };
+
+            let (glyph_buffer, glyph_texture) = {
+                let glyph_buffer = ctx.create_buffer().unwrap();
+                ctx.bind_buffer(glow::TEXTURE_BUFFER, Some(glyph_buffer));
+                grid.glyph_data_buf_id = glyph_buffer.0.into();
+                let glyph_texture = ctx.create_texture().unwrap();
+                ctx.bind_texture(glow::TEXTURE_BUFFER, Some(glyph_texture));
+                grid.glyph_data_buf_tex_id = glyph_texture.0.into();
+                // not possible in glow?
+                gl::TexBuffer(gl::TEXTURE_BUFFER, gl::RGBA8, grid.glyph_data_buf_id);
+
+                (glyph_buffer, glyph_texture)
+            };
+
+            let atlas_texture = {
+                let atlas_texture = ctx.create_texture().unwrap();
+                ctx.bind_texture(glow::TEXTURE_BUFFER, Some(atlas_texture));
+
+                ctx.tex_image_2d(
+                    glow::TEXTURE_2D,
+                    0,
+                    glow::RGBA8 as i32,
+                    kGridAtlasSize.into(),
+                    kGridAtlasSize.into(),
+                    0,
+                    glow::RGBA,
+                    glow::UNSIGNED_BYTE,
+                    grid.atlas(),
+                );
+
+                ctx.tex_parameter_i32(
+                    glow::TEXTURE_2D,
+                    glow::TEXTURE_MIN_FILTER,
+                    glow::LINEAR as i32,
+                );
+                ctx.tex_parameter_i32(
+                    glow::TEXTURE_2D,
+                    glow::TEXTURE_MAG_FILTER,
+                    glow::LINEAR as i32,
+                );
+                ctx.tex_parameter_i32(
+                    glow::TEXTURE_2D,
+                    glow::TEXTURE_WRAP_S,
+                    glow::CLAMP_TO_EDGE as i32,
+                );
+                ctx.tex_parameter_i32(
+                    glow::TEXTURE_2D,
+                    glow::TEXTURE_WRAP_R,
+                    glow::CLAMP_TO_EDGE as i32,
+                );
+                atlas_texture
+            };
+
+            GLState {
+                program,
+                atlas_texture,
+                vert_buffer,
+                glyph_buffer,
+                glyph_texture,
+            }
+        }
+    }
+
+    fn render(&self, ctx: &Context, grid: &Grid, transform: [f32; 16]) {
+        unsafe {
+            // render
+
+            ctx.clear_color(160.0 / 255.0, 169.0 / 255.0, 175.0 / 255.0, 1.0);
+            ctx.clear(glow::COLOR_BUFFER_BIT);
+
+            ctx.use_program(Some(self.program));
+            // gl::UniformMatrix4fv(grid.u_transform, 1, gl::FALSE, transform.as_ptr());
+
+            ctx.bind_buffer(glow::TEXTURE_BUFFER, Some(self.glyph_buffer));
+            ctx.buffer_data_u8_slice(gl::TEXTURE_BUFFER, grid.glyphs(), glow::STREAM_DRAW);
+
+            ctx.active_texture(glow::TEXTURE1);
+            ctx.bind_texture(glow::TEXTURE_BUFFER, Some(self.glyph_texture));
+
+            ctx.enable(glow::BLEND);
+            ctx.bind_buffer(glow::ARRAY_BUFFER, Some(self.vert_buffer));
+            ctx.enable_vertex_attrib_array(0);
+            ctx.enable_vertex_attrib_array(1);
+            ctx.enable_vertex_attrib_array(2);
+
+            gl::VertexAttribPointer(
+                0,
+                2,
+                gl::FLOAT,
+                gl::FALSE,
+                size_of::<GlVertex>() as i32,
+                offset_of!(GlVertex, pos) as *const gl::types::GLvoid,
+            );
+            gl::VertexAttribIPointer(
+                1,
+                1,
+                gl::UNSIGNED_INT,
+                size_of::<GlVertex>() as i32,
+                offset_of!(GlVertex, data) as *const gl::types::GLvoid,
+            );
+            gl::VertexAttribPointer(
+                2,
+                4,
+                gl::UNSIGNED_BYTE,
+                gl::TRUE,
+                size_of::<GlVertex>() as i32,
+                offset_of!(GlVertex, color) as *const gl::types::GLvoid,
+            );
+
+            ctx.draw_arrays(glow::TRIANGLES, 0, grid.verts.len() as i32);
+
+            ctx.disable_vertex_attrib_array(0);
+            ctx.disable_vertex_attrib_array(1);
+            ctx.disable_vertex_attrib_array(2);
+
+            ctx.disable(glow::BLEND);
+        }
     }
 }
